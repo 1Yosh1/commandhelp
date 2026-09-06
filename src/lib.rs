@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod crawler;
 pub mod error;
 pub mod ipc;
