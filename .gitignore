@@ -1,0 +1,3 @@
+/target
+*.log
+.superpowers/sdd/*/task-*-review-package.diff
