@@ -3,4 +3,5 @@ pub mod error;
 pub mod ipc;
 pub mod models;
 pub mod parser;
+pub mod safety;
 pub mod storage;
