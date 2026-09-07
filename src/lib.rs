@@ -5,5 +5,6 @@ pub mod ipc;
 pub mod models;
 pub mod parser;
 pub mod safety;
+pub mod shell;
 pub mod storage;
 pub mod tui;
