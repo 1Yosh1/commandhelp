@@ -6,3 +6,4 @@ pub mod models;
 pub mod parser;
 pub mod safety;
 pub mod storage;
+pub mod tui;
