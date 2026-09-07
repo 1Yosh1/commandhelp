@@ -1,10 +1,12 @@
 pub mod ai;
+pub mod config;
 pub mod crawler;
 pub mod error;
 pub mod ipc;
 pub mod models;
 pub mod parser;
 pub mod safety;
+pub mod setup;
 pub mod shell;
 pub mod storage;
 pub mod tui;

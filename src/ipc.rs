@@ -25,13 +25,51 @@ pub enum IpcResponse {
     Error { message: String },
 }
 
+fn spawn_daemon_detached() {
+    if let Ok(exe) = std::env::current_exe() {
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            const DETACHED_PROCESS: u32 = 0x00000008;
+            const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
+            let _ = std::process::Command::new(exe)
+                .arg("daemon")
+                .creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
+                .spawn();
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            let _ = std::process::Command::new(exe)
+                .arg("daemon")
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn();
+        }
+    }
+}
+
 pub async fn send_ipc_request(name: &str, req: &IpcRequest) -> Result<IpcResponse, ChelpError> {
     let socket_name = name.to_ns_name::<GenericNamespaced>()
         .map_err(|e| ChelpError::Ipc(e.to_string()))?;
 
-    let mut stream = LocalSocketStream::connect(socket_name)
-        .await
-        .map_err(|e| ChelpError::Ipc(format!("Cannot connect to daemon: {}", e)))?;
+    let mut stream = match LocalSocketStream::connect(socket_name).await {
+        Ok(s) => s,
+        Err(_) => {
+            spawn_daemon_detached();
+            let mut connected = None;
+            for _ in 0..8 {
+                tokio::time::sleep(tokio::time::Duration::from_millis(25)).await;
+                if let Ok(sn) = name.to_ns_name::<GenericNamespaced>() {
+                    if let Ok(s) = LocalSocketStream::connect(sn).await {
+                        connected = Some(s);
+                        break;
+                    }
+                }
+            }
+            connected.ok_or_else(|| ChelpError::Ipc("Cannot connect to chelp daemon".to_string()))?
+        }
+    };
 
     let bytes = serde_json::to_vec(req)?;
     let len_prefix = (bytes.len() as u32).to_le_bytes();
