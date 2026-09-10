@@ -1,0 +1,9 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/site/index.html" },
+    { "source": "/auth/cli", "destination": "/site/auth/cli/index.html" },
+    { "source": "/install.sh", "destination": "/install.sh" },
+    { "source": "/install.ps1", "destination": "/install.ps1" }
+  ]
+}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CommandHelp — CLI Authentication</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --card: #0d1117;
+      --border: #1e293b;
+      --cyan: #38bdf8;
+      --emerald: #10b981;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      background-image: radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.12), transparent 60%);
+    }
+    .auth-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 480px;
+      width: 100%;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+    .logo-badge {
+      font-size: 2.2rem;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 28px;
+    }
+    .session-info {
+      background: #07090e;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 28px;
+      font-size: 0.8rem;
+      color: var(--cyan);
+      text-align: left;
+    }
+    .btn-auth {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #1e293b;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .btn-auth.primary {
+      background: var(--cyan);
+      color: #000;
+      border-color: var(--cyan);
+    }
+    .btn-auth:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+    }
+    .terms {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <div class="logo-badge">🔑</div>
+    <h1>Authenticate CLI</h1>
+    <p>Grant CommandHelp permission to link your terminal session with CommandHelp Pro.</p>
+
+    <div class="session-info">
+      <div><strong>Session ID:</strong> <span id="sessId">Loading...</span></div>
+      <div><strong>Loopback Port:</strong> <span id="portId">4321</span></div>
+    </div>
+
+    <button class="btn-auth primary" onclick="completeLogin('GitHub')">
+      <span>🐙</span> Authorize with GitHub
+    </button>
+    <button class="btn-auth" onclick="completeLogin('Google')">
+      <span>🌐</span> Continue with Google
+    </button>
+
+    <div class="terms">
+      By authenticating, your CLI will receive an encrypted access token stored strictly in <code>~/.chelp/credentials.json</code>.
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const port = urlParams.get('port') || '4321';
+    const sessionId = urlParams.get('session_id') || 'dev_session_' + Math.floor(Math.random()*100000);
+
+    document.getElementById('sessId').textContent = sessionId;
+    document.getElementById('portId').textContent = port;
+
+    function completeLogin(provider) {
+      const mockToken = "chelp_pro_token_" + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+      const email = provider === 'GitHub' ? "developer@github.com" : "engineer@google.com";
+      const plan = "Pro";
+
+      const callbackUrl = `http://127.0.0.1:${port}/callback?token=${mockToken}&email=${encodeURIComponent(email)}&plan=${plan}`;
+      window.location.href = callbackUrl;
+    }
+  </script>
+</body>
+</html>
