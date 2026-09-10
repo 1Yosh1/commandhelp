@@ -22,12 +22,26 @@
 
 ## 🚀 Quickstart (1-Step Setup)
 
-### 1. Build or Install
+### 1. Instant One-Line Install
 
+**macOS / Linux:**
 ```bash
-git clone https://github.com/1Yosh1/commandhelp.git
-cd commandhelp
-cargo build --release
+curl -fsSL https://raw.githubusercontent.com/1Yosh1/commandhelp/master/install.sh | bash
+```
+
+**Homebrew (macOS / Linux):**
+```bash
+brew install 1Yosh1/tap/chelp
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/1Yosh1/commandhelp/master/install.ps1 | iex
+```
+
+*Or build from source:*
+```bash
+cargo install --git https://github.com/1Yosh1/commandhelp.git
 ```
 
 ### 2. Run Automatic Setup
