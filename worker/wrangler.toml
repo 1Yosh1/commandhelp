@@ -1,0 +1,13 @@
+name = "chelp-api"
+main = "src/index.ts"
+compatibility_date = "2024-09-01"
+
+[vars]
+ENVIRONMENT = "production"
+DEFAULT_MODEL = "gemini-2.5-flash"
+
+# Key-Value namespace for user subscriptions and rate limits
+# Run: wrangler kv:namespace create "USERS_KV"
+# [[kv_namespaces]]
+# binding = "USERS_KV"
+# id = "your-kv-id-here"

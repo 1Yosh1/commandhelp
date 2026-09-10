@@ -370,6 +370,13 @@ pub fn create_provider_from_config(cfg: &AiConfig) -> Result<Box<dyn AiProvider>
         "ollama" => {
             Ok(Box::new(OllamaProvider::new(cfg.endpoint.clone(), cfg.model.clone())))
         }
+        "pro" | "cloud" => {
+            let token = cfg.api_key.clone()
+                .or_else(|| std::env::var("CHELP_API_TOKEN").ok())
+                .or_else(|| crate::auth::load_credentials().ok().flatten().map(|c| c.token))
+                .ok_or_else(|| ChelpError::Config("Missing CommandHelp Pro token. Run 'chelp login' to authenticate.".to_string()))?;
+            Ok(Box::new(ProProvider::new(token, cfg.endpoint.clone())))
+        }
         "custom" | "groq" | "deepseek" | "openrouter" => {
             let key = cfg.api_key.clone()
                 .or_else(|| std::env::var("CUSTOM_API_KEY").ok())
@@ -379,8 +386,67 @@ pub fn create_provider_from_config(cfg: &AiConfig) -> Result<Box<dyn AiProvider>
             Ok(Box::new(OpenAiProvider::new(key, cfg.model.clone(), Some(endpoint))))
         }
         other => Err(ChelpError::Config(format!(
-            "Unknown provider '{}'. Supported: gemini, openai, anthropic, ollama, custom",
+            "Unknown provider '{}'. Supported: gemini, openai, anthropic, ollama, pro, custom",
             other
         ))),
+    }
+}
+
+// -----------------------------------------------------------------------------
+// 5. CommandHelp Pro Hosted Provider (Cloudflare Worker Edge API)
+// -----------------------------------------------------------------------------
+pub struct ProProvider {
+    pub token: String,
+    pub endpoint: String,
+    pub client: reqwest::Client,
+}
+
+impl ProProvider {
+    pub fn new(token: String, endpoint: Option<String>) -> Self {
+        Self {
+            token,
+            endpoint: endpoint.unwrap_or_else(|| "https://api.commandhelp.dev".to_string()),
+            client: reqwest::Client::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl AiProvider for ProProvider {
+    async fn resolve_intent(
+        &self,
+        query: &str,
+        ctx: &ShellContext,
+        schemas: &[CliCommandSchema],
+    ) -> Result<AiCommandResponse, ChelpError> {
+        let sanitized_query = DlpRedactor::redact(query);
+        let sanitized_cwd = DlpRedactor::redact(&ctx.cwd);
+        let url = format!("{}/api/query", self.endpoint.trim_end_matches('/'));
+
+        let body = serde_json::json!({
+            "prompt": sanitized_query,
+            "os": ctx.os,
+            "shell": ctx.shell,
+            "cwd": sanitized_cwd,
+            "schemas": schemas,
+        });
+
+        let res = self.client.post(&url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| ChelpError::AiProvider(format!("Failed to connect to CommandHelp Pro API: {}", e)))?;
+
+        if !res.status().is_success() {
+            let err_text = res.text().await.unwrap_or_default();
+            return Err(ChelpError::AiProvider(format!("Pro API error: {}", err_text)));
+        }
+
+        let mut ai_resp: AiCommandResponse = res.json().await
+            .map_err(|e| ChelpError::AiProvider(format!("Invalid response JSON from Pro API: {}", e)))?;
+
+        sanitize_and_verify(&mut ai_resp);
+        Ok(ai_resp)
     }
 }
