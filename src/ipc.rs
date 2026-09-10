@@ -26,6 +26,9 @@ pub enum IpcResponse {
 }
 
 fn spawn_daemon_detached() {
+    if std::env::var("CHELP_NO_AUTO_SPAWN").is_ok() {
+        return;
+    }
     if let Ok(exe) = std::env::current_exe() {
         #[cfg(target_os = "windows")]
         {
@@ -34,6 +37,9 @@ fn spawn_daemon_detached() {
             const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
             let _ = std::process::Command::new(exe)
                 .arg("daemon")
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
                 .creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP)
                 .spawn();
         }

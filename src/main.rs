@@ -41,6 +41,11 @@ enum Commands {
     Query {
         prompt: String,
     },
+    /// 🔑 Authenticate your terminal with CommandHelp Pro via browser
+    Login {
+        #[arg(long, default_value = "4321")]
+        port: u16,
+    },
     /// Generate shell hook script (pwsh, zsh, bash)
     Init {
         shell: String,
@@ -103,6 +108,9 @@ async fn main() -> Result<(), ChelpError> {
                 }
                 UserAction::Cancel => {}
             }
+        }
+        Commands::Login { port } => {
+            let _ = chelp::auth::run_cli_login(port, 120, None).await?;
         }
         Commands::Init { shell } => {
             let script = generate_hook_script(&shell)?;

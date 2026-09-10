@@ -1,11 +1,15 @@
 // src/ai.rs
 use crate::config::AiConfig;
+use crate::dlp::DlpRedactor;
 use crate::error::ChelpError;
 use crate::models::{AiCommandResponse, CliCommandSchema, ShellContext};
 use crate::safety::sanitize_and_verify;
 use async_trait::async_trait;
 
 pub fn build_prompt(user_query: &str, ctx: &ShellContext, schemas: &[CliCommandSchema]) -> String {
+    let sanitized_query = DlpRedactor::redact(user_query);
+    let sanitized_cwd = DlpRedactor::redact(&ctx.cwd);
+
     let mut schema_summary = String::new();
     for s in schemas {
         schema_summary.push_str(&format!("Tool Context: {} (Subcommands: {})\n", s.binary, s.subcommands.join(", ")));
@@ -35,7 +39,7 @@ Respond strictly with a JSON object matching this schema:
   "destructive_warning": null or "<warning message>"
 }}
 No markdown formatting, no code backticks. Just the raw JSON object."#,
-        ctx.os, ctx.shell, ctx.cwd, schema_summary, user_query
+        ctx.os, ctx.shell, sanitized_cwd, schema_summary, sanitized_query
     )
 }
 

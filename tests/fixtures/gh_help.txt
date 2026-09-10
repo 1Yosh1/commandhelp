@@ -1,0 +1,26 @@
+Work seamlessly with GitHub from the command line.
+
+USAGE
+  gh <command> <subcommand> [flags]
+
+CORE COMMANDS
+  auth:        Authenticate gh and git with GitHub
+  browse:      Open the repository in the browser
+  codespace:   Connect and manage codespaces
+  gist:        Manage gists
+  issue:       Manage issues
+  pr:          Manage pull requests
+  release:     Manage releases
+  repo:        Manage repositories
+
+ACTIONS COMMANDS
+  cache:       Manage GitHub Actions caches
+  run:         View details about workflow runs
+  workflow:    View details about GitHub Actions workflows
+
+FLAGS
+  -h, --help      Show help for command
+      --version   Show gh version
+
+LEARN MORE
+  Use 'gh <command> <subcommand> --help' for more information about a command.

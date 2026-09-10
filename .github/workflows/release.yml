@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin: chelp
+            archive_ext: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bin: chelp
+            archive_ext: tar.gz
+          - os: macos-13
+            target: x86_64-apple-darwin
+            bin: chelp
+            archive_ext: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: chelp.exe
+            archive_ext: zip
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package Release Assets (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p staging
+          cp target/${{ matrix.target }}/release/${{ matrix.bin }} staging/
+          cp README.md staging/
+          cd staging
+          tar -czvf ../chelp-${{ matrix.target }}.${{ matrix.archive_ext }} *
+          cd ..
+          shasum -a 256 chelp-${{ matrix.target }}.${{ matrix.archive_ext }} > chelp-${{ matrix.target }}.${{ matrix.archive_ext }}.sha256
+
+      - name: Package Release Assets (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path staging -Force
+          Copy-Item target/${{ matrix.target }}/release/${{ matrix.bin }} staging/
+          Copy-Item README.md staging/
+          Compress-Archive -Path staging/* -DestinationPath chelp-${{ matrix.target }}.${{ matrix.archive_ext }} -Force
+          $hash = (Get-FileHash -Path chelp-${{ matrix.target }}.${{ matrix.archive_ext }} -Algorithm SHA256).Hash.ToLower()
+          "$hash  chelp-${{ matrix.target }}.${{ matrix.archive_ext }}" | Out-File -FilePath chelp-${{ matrix.target }}.${{ matrix.archive_ext }}.sha256 -Encoding ascii
+
+      - name: Upload Release Artifacts
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            chelp-${{ matrix.target }}.${{ matrix.archive_ext }}
+            chelp-${{ matrix.target }}.${{ matrix.archive_ext }}.sha256
