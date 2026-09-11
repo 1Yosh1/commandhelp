@@ -61,12 +61,9 @@ fn test_pty_spawn_binary_and_capture_output() {
     while start.elapsed() < timeout {
         if let Ok(chunk) = rx.recv_timeout(std::time::Duration::from_millis(100)) {
             output.push_str(&chunk);
-            if output.contains("chelp") {
-                break;
-            }
         }
         if let Ok(Some(_)) = child.try_wait() {
-            while let Ok(chunk) = rx.try_recv() {
+            while let Ok(chunk) = rx.recv_timeout(std::time::Duration::from_millis(100)) {
                 output.push_str(&chunk);
             }
             break;
@@ -120,12 +117,9 @@ fn test_pty_spawn_help_command() {
     while start.elapsed() < timeout {
         if let Ok(chunk) = rx.recv_timeout(std::time::Duration::from_millis(100)) {
             output.push_str(&chunk);
-            if output.contains("Usage:") || output.contains("Commands:") {
-                break;
-            }
         }
         if let Ok(Some(_)) = child.try_wait() {
-            while let Ok(chunk) = rx.try_recv() {
+            while let Ok(chunk) = rx.recv_timeout(std::time::Duration::from_millis(100)) {
                 output.push_str(&chunk);
             }
             break;
