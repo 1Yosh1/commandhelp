@@ -20,7 +20,7 @@ fn test_cli_version_flag() {
     cmd.arg("--version")
         .assert()
         .success()
-        .stdout(predicate::str::contains("chelp 0.1.1"));
+        .stdout(predicate::str::contains("chelp 0.1.2"));
 }
 
 #[test]

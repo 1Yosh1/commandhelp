@@ -75,7 +75,7 @@ fn test_pty_spawn_binary_and_capture_output() {
 
     let status = child.wait().expect("Failed to wait on PTY child process");
     assert!(status.success());
-    assert!(output.contains("chelp 0.1.1") || output.contains("chelp"));
+    assert!(output.contains("chelp 0.1.2") || output.contains("chelp"));
 }
 
 #[test]

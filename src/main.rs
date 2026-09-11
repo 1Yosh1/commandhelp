@@ -15,7 +15,7 @@ use std::path::PathBuf;
 #[command(
     name = "chelp",
     about = "Universal AI-Powered CLI Assistant & Autocomplete Engine",
-    version = "0.1.1"
+    version = "0.1.2"
 )]
 struct Cli {
     #[command(subcommand)]

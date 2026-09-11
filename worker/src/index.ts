@@ -34,7 +34,7 @@ export default {
     try {
       // 1. Health check & version
       if (url.pathname === "/health" || url.pathname === "/") {
-        return Response.json({ status: "ok", service: "chelp-edge-api", version: "0.1.1" }, { headers: CORS_HEADERS });
+        return Response.json({ status: "ok", service: "chelp-edge-api", version: "0.1.2" }, { headers: CORS_HEADERS });
       }
 
       // 2. Query Route: Hosted Inference for Pro Users
