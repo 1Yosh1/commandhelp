@@ -1,6 +1,6 @@
 {
   "name": "chelp-worker",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cloudflare Worker Edge API & Pro Inference Proxy for CommandHelp",
   "main": "src/index.ts",
   "scripts": {
