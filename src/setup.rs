@@ -155,11 +155,12 @@ pub async fn run_config_wizard() -> Result<(), ChelpError> {
         }
         "5" => {
             ai_config.provider = "custom".to_string();
-            print!("Enter Endpoint URL (e.g. https://api.groq.com/openai/v1): ");
+            print!("Enter Endpoint URL (default: https://openrouter.ai/api/v1): ");
             let _ = io::stdout().flush();
             let mut ep = String::new();
             let _ = reader.read_line(&mut ep);
-            ai_config.endpoint = Some(ep.trim().to_string());
+            let ep = ep.trim();
+            ai_config.endpoint = Some(if ep.is_empty() { "https://openrouter.ai/api/v1".to_string() } else { ep.to_string() });
 
             print!("Enter API Key: ");
             let _ = io::stdout().flush();
@@ -167,11 +168,12 @@ pub async fn run_config_wizard() -> Result<(), ChelpError> {
             let _ = reader.read_line(&mut key);
             ai_config.api_key = Some(key.trim().to_string());
 
-            print!("Enter Model Name (e.g. llama-3.3-70b-versatile): ");
+            print!("Enter Model Name (default: meta-llama/llama-3-8b-instruct): ");
             let _ = io::stdout().flush();
             let mut m = String::new();
             let _ = reader.read_line(&mut m);
-            ai_config.model = Some(m.trim().to_string());
+            let m = m.trim();
+            ai_config.model = Some(if m.is_empty() { "meta-llama/llama-3-8b-instruct".to_string() } else { m.to_string() });
         }
         _ => {
             // Default: Gemini

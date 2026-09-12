@@ -81,7 +81,7 @@ impl GeminiProvider {
         Self {
             api_key,
             model: "gemini-2.5-flash".to_string(),
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder().timeout(std::time::Duration::from_secs(15)).build().unwrap_or_default(),
         }
     }
 
@@ -89,7 +89,7 @@ impl GeminiProvider {
         Self {
             api_key,
             model,
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder().timeout(std::time::Duration::from_secs(15)).build().unwrap_or_default(),
         }
     }
 }
@@ -156,7 +156,10 @@ impl OpenAiProvider {
             api_key,
             model: model.unwrap_or_else(|| "gpt-4o-mini".to_string()),
             endpoint: endpoint.unwrap_or_else(|| "https://api.openai.com/v1".to_string()),
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(15))
+                .build()
+                .unwrap_or_default(),
         }
     }
 }
@@ -189,6 +192,8 @@ impl AiProvider for OpenAiProvider {
 
         let res = self.client.post(&url)
             .header("Authorization", format!("Bearer {}", self.api_key))
+            .header("HTTP-Referer", "https://github.com/1Yosh1/commandhelp")
+            .header("X-Title", "CommandHelp CLI")
             .json(&body)
             .send()
             .await
@@ -228,7 +233,7 @@ impl AnthropicProvider {
         Self {
             api_key,
             model: model.unwrap_or_else(|| "claude-3-5-haiku-20241022".to_string()),
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder().timeout(std::time::Duration::from_secs(15)).build().unwrap_or_default(),
         }
     }
 }
@@ -298,7 +303,7 @@ impl OllamaProvider {
         Self {
             endpoint: endpoint.unwrap_or_else(|| "http://localhost:11434".to_string()),
             model: model.unwrap_or_else(|| "qwen2.5-coder:latest".to_string()),
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder().timeout(std::time::Duration::from_secs(15)).build().unwrap_or_default(),
         }
     }
 }
@@ -406,7 +411,7 @@ impl ProProvider {
         Self {
             token,
             endpoint: endpoint.unwrap_or_else(|| "https://api.commandhelp.dev".to_string()),
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder().timeout(std::time::Duration::from_secs(15)).build().unwrap_or_default(),
         }
     }
 }
