@@ -40,6 +40,8 @@ enum Commands {
     /// Query the AI assistant with natural language
     Query {
         prompt: String,
+        #[arg(long)]
+        out_file: Option<String>,
     },
     /// 🔑 Authenticate your terminal with CommandHelp Pro via browser
     Login {
@@ -121,7 +123,7 @@ async fn main() -> Result<(), ChelpError> {
                 }
             }
         }
-        Commands::Query { prompt } => {
+        Commands::Query { prompt, out_file } => {
             let config = load_config()?;
             let provider = match create_provider_from_config(&config.ai) {
                 Ok(p) => p,
@@ -142,7 +144,11 @@ async fn main() -> Result<(), ChelpError> {
 
             match render_interactive_confirmation(&resp)? {
                 UserAction::Run(cmd) | UserAction::Edit(cmd) => {
-                    println!("{}", cmd);
+                    if let Some(path) = out_file {
+                        let _ = std::fs::write(path, cmd);
+                    } else {
+                        println!("{}", cmd);
+                    }
                 }
                 UserAction::Cancel => {}
             }

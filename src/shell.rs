@@ -9,10 +9,16 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+ ' -ScriptBlock {
     $line = $null
     $cursor = $null
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-    $result = chelp query "$line"
+    $tmp = New-TemporaryFile
+    chelp query "$line" --out-file $tmp.FullName
+    $result = Get-Content -Path $tmp.FullName -Raw
+    Remove-Item -Path $tmp.FullName -ErrorAction SilentlyContinue
     if ($result) {
-        [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
-        [Microsoft.PowerShell.PSConsoleReadLine]::Insert($result)
+        $result = $result.Trim()
+        if ($result) {
+            [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
+            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($result)
+        }
     }
 }
 "#.trim().to_string()),
