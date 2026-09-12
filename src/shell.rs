@@ -5,7 +5,7 @@ pub fn generate_hook_script(shell: &str) -> Result<String, ChelpError> {
     match shell.to_lowercase().as_str() {
         "pwsh" | "powershell" => Ok(r#"
 # CommandHelp PowerShell Hook
-Set-PSReadLineKeyHandler -Chord 'Ctrl+@' -ScriptBlock {
+Set-PSReadLineKeyHandler -Chord 'Ctrl+ ' -ScriptBlock {
     $line = $null
     $cursor = $null
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
