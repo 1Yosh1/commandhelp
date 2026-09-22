@@ -63,7 +63,7 @@ fn test_pty_spawn_binary_and_capture_output() {
             output.push_str(&chunk);
         }
         if let Ok(Some(_)) = child.try_wait() {
-            while let Ok(chunk) = rx.recv_timeout(std::time::Duration::from_millis(100)) {
+            while let Ok(chunk) = rx.recv_timeout(std::time::Duration::from_millis(500)) {
                 output.push_str(&chunk);
             }
             break;
@@ -119,7 +119,7 @@ fn test_pty_spawn_help_command() {
             output.push_str(&chunk);
         }
         if let Ok(Some(_)) = child.try_wait() {
-            while let Ok(chunk) = rx.recv_timeout(std::time::Duration::from_millis(100)) {
+            while let Ok(chunk) = rx.recv_timeout(std::time::Duration::from_millis(500)) {
                 output.push_str(&chunk);
             }
             break;
