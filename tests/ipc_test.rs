@@ -12,6 +12,8 @@ async fn test_ipc_roundtrip_ping() {
     let _server_handle = start_daemon(store, &socket_name).await.unwrap();
     tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
 
-    let res = send_ipc_request(&socket_name, &IpcRequest::Ping).await.unwrap();
+    let res = send_ipc_request(&socket_name, &IpcRequest::Ping)
+        .await
+        .unwrap();
     assert_eq!(res, IpcResponse::Pong);
 }

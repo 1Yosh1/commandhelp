@@ -96,9 +96,10 @@ pub fn save_recipe(
     global: bool,
     workspace_dir: Option<&Path>,
 ) -> Result<PathBuf, ChelpError> {
-    let target_path = match workspace_dir {
-        Some(dir) if !global => get_workspace_recipes_path(dir),
-        _ => get_global_recipes_path(),
+    let target_path = if global || workspace_dir.is_none() {
+        get_global_recipes_path()
+    } else {
+        get_workspace_recipes_path(workspace_dir.unwrap())
     };
 
     if let Some(parent) = target_path.parent() {
@@ -130,9 +131,10 @@ pub fn remove_recipe(
     global: bool,
     workspace_dir: Option<&Path>,
 ) -> Result<bool, ChelpError> {
-    let target_path = match workspace_dir {
-        Some(dir) if !global => get_workspace_recipes_path(dir),
-        _ => get_global_recipes_path(),
+    let target_path = if global || workspace_dir.is_none() {
+        get_global_recipes_path()
+    } else {
+        get_workspace_recipes_path(workspace_dir.unwrap())
     };
 
     if !target_path.exists() {
@@ -161,12 +163,7 @@ pub fn run_recipe(name: &str, workspace_dir: Option<&Path>) -> Result<Option<Str
     let recipe = recipes
         .into_iter()
         .find(|r| r.name == name)
-        .ok_or_else(|| {
-            ChelpError::Config(format!(
-                "Recipe '{}' not found. Run 'chelp recipe list'.",
-                name
-            ))
-        })?;
+        .ok_or_else(|| ChelpError::Config(format!("Recipe '{}' not found. Run 'chelp recipe list'.", name)))?;
 
     let (safety_level, warning) = recipe.resolved_safety();
 

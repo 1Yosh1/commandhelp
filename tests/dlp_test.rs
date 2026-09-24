@@ -13,7 +13,8 @@ fn test_dlp_redacts_aws_keys() {
 
 #[test]
 fn test_dlp_redacts_github_tokens() {
-    let input = "git clone https://ghp_abcdefghijklmnopqrstuvwxyz1234567890@github.com/org/repo.git";
+    let input =
+        "git clone https://ghp_abcdefghijklmnopqrstuvwxyz1234567890@github.com/org/repo.git";
     let redacted = DlpRedactor::redact(input);
     assert!(!redacted.contains("ghp_abcdefghijklmnopqrstuvwxyz1234567890"));
     assert!(redacted.contains("[REDACTED_GITHUB_TOKEN]"));
@@ -34,7 +35,8 @@ fn test_dlp_redacts_openai_and_anthropic_keys() {
     assert!(!redacted.contains("sk-proj-abcdefghijklmnopqrstuvwxyz1234567890"));
     assert!(redacted.contains("[REDACTED_AI_KEY]"));
 
-    let anthropic_input = "export ANTHROPIC_API_KEY=sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890";
+    let anthropic_input =
+        "export ANTHROPIC_API_KEY=sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890";
     let redacted_ant = DlpRedactor::redact(anthropic_input);
     assert!(!redacted_ant.contains("sk-ant-api03-abcdefghijklmnopqrstuvwxyz1234567890"));
     assert!(redacted_ant.contains("[REDACTED_AI_KEY]"));

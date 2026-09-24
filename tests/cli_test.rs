@@ -7,7 +7,9 @@ fn test_cli_help_flag() {
     cmd.arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("Universal AI-Powered CLI Assistant"))
+        .stdout(predicate::str::contains(
+            "Universal AI-Powered CLI Assistant",
+        ))
         .stdout(predicate::str::contains("Usage: chelp"))
         .stdout(predicate::str::contains("setup"))
         .stdout(predicate::str::contains("config"))

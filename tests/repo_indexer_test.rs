@@ -1,7 +1,7 @@
 // tests/repo_indexer_test.rs
 use chelp::repo_indexer::{
-    index_workspace, parse_docker_compose_services, parse_justfile_recipes,
-    parse_makefile_targets, parse_package_json_scripts,
+    index_workspace, parse_docker_compose_services, parse_justfile_recipes, parse_makefile_targets,
+    parse_package_json_scripts,
 };
 use chelp::storage::SchemaStore;
 use std::fs;
@@ -33,7 +33,10 @@ docker-build: ## Build container image
     );
     assert_eq!(targets[1].name, "test");
     assert_eq!(targets[2].name, "docker-build");
-    assert_eq!(targets[2].description.as_deref(), Some("Build container image"));
+    assert_eq!(
+        targets[2].description.as_deref(),
+        Some("Build container image")
+    );
 }
 
 #[test]
@@ -114,7 +117,10 @@ fn test_index_workspace_integration() {
     assert_eq!(count, 4); // 2 makefile targets + 2 npm scripts
 
     // Check stored make schema
-    let make_schema = store.get_schema("make", &[]).unwrap().expect("Expected make schema");
+    let make_schema = store
+        .get_schema("make", &[])
+        .unwrap()
+        .expect("Expected make schema");
     assert_eq!(make_schema.subcommands, vec!["compile", "test"]);
 
     // Check stored npm run schema
@@ -132,11 +138,7 @@ fn test_cli_index_repo_command() {
     let dir = tempdir().unwrap();
     let ws = dir.path();
 
-    fs::write(
-        ws.join("Makefile"),
-        "## Build\nbuild:\n\techo build\n",
-    )
-    .unwrap();
+    fs::write(ws.join("Makefile"), "## Build\nbuild:\n\techo build\n").unwrap();
 
     let mut cmd = assert_cmd::Command::cargo_bin("chelp").unwrap();
     cmd.arg("index-repo")
@@ -144,7 +146,7 @@ fn test_cli_index_repo_command() {
         .arg(ws.to_str().unwrap())
         .env("CHELP_NO_AUTO_SPAWN", "1");
 
-    cmd.assert()
-        .success()
-        .stdout(predicates::str::contains("Indexed 1 project targets/scripts into local store."));
+    cmd.assert().success().stdout(predicates::str::contains(
+        "Indexed 1 project targets/scripts into local store.",
+    ));
 }

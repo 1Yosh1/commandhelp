@@ -1,0 +1,18 @@
+--- src/parser.rs
++++ src/parser.rs
+@@ -21,6 +21,7 @@
+
+     let mut in_commands_section = false;
+     let mut in_options_section = false;
++    let split_pattern = Regex::new(r"\s{2,}").unwrap();
+
+     for line in help_text.lines() {
+         let trimmed = line.trim();
+@@ -52,7 +53,6 @@
+
+         // Parse flags if line starts with '-'
+         if trimmed.starts_with('-') {
+-            let split_pattern = Regex::new(r"\s{2,}").unwrap();
+             let parts: Vec<&str> = split_pattern.splitn(trimmed, 2).collect();
+             if parts.len() >= 2 {
+                 let flags_part = parts[0];

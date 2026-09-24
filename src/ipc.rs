@@ -56,7 +56,8 @@ fn spawn_daemon_detached() {
 }
 
 pub async fn send_ipc_request(name: &str, req: &IpcRequest) -> Result<IpcResponse, ChelpError> {
-    let socket_name = name.to_ns_name::<GenericNamespaced>()
+    let socket_name = name
+        .to_ns_name::<GenericNamespaced>()
         .map_err(|e| ChelpError::Ipc(e.to_string()))?;
 
     let mut stream = match LocalSocketStream::connect(socket_name).await {
@@ -73,7 +74,8 @@ pub async fn send_ipc_request(name: &str, req: &IpcRequest) -> Result<IpcRespons
                     }
                 }
             }
-            connected.ok_or_else(|| ChelpError::Ipc("Cannot connect to chelp daemon".to_string()))?
+            connected
+                .ok_or_else(|| ChelpError::Ipc("Cannot connect to chelp daemon".to_string()))?
         }
     };
 
@@ -95,7 +97,8 @@ pub async fn send_ipc_request(name: &str, req: &IpcRequest) -> Result<IpcRespons
 }
 
 pub async fn start_daemon(store: SchemaStore, name: &str) -> Result<JoinHandle<()>, ChelpError> {
-    let socket_name = name.to_ns_name::<GenericNamespaced>()
+    let socket_name = name
+        .to_ns_name::<GenericNamespaced>()
         .map_err(|e| ChelpError::Ipc(e.to_string()))?;
 
     let listener = interprocess::local_socket::ListenerOptions::new()
@@ -126,8 +129,14 @@ pub async fn start_daemon(store: SchemaStore, name: &str) -> Result<JoinHandle<(
                                 IpcResponse::Suggestions { flags: vec![] }
                             } else {
                                 let binary = parts[0];
-                                let last_token = if buffer.ends_with(' ') { "" } else { parts.last().unwrap_or(&"") };
-                                let flags = store.match_flags(binary, &[], last_token).unwrap_or_default();
+                                let last_token = if buffer.ends_with(' ') {
+                                    ""
+                                } else {
+                                    parts.last().unwrap_or(&"")
+                                };
+                                let flags = store
+                                    .match_flags(binary, &[], last_token)
+                                    .unwrap_or_default();
                                 IpcResponse::Suggestions { flags }
                             }
                         }

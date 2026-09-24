@@ -36,10 +36,16 @@ fn test_pty_spawn_binary_and_capture_output() {
     cmd.arg("--version");
     cmd.env("CHELP_NO_AUTO_SPAWN", "1");
 
-    let mut child = pair.slave.spawn_command(cmd).expect("Failed to spawn process in PTY");
+    let mut child = pair
+        .slave
+        .spawn_command(cmd)
+        .expect("Failed to spawn process in PTY");
     drop(pair.slave);
 
-    let mut reader = pair.master.try_clone_reader().expect("Failed to clone PTY reader");
+    let mut reader = pair
+        .master
+        .try_clone_reader()
+        .expect("Failed to clone PTY reader");
     let (tx, rx) = std::sync::mpsc::channel();
 
     let _reader_thread = std::thread::spawn(move || {
@@ -48,7 +54,10 @@ fn test_pty_spawn_binary_and_capture_output() {
             if n == 0 {
                 break;
             }
-            if tx.send(String::from_utf8_lossy(&buf[..n]).to_string()).is_err() {
+            if tx
+                .send(String::from_utf8_lossy(&buf[..n]).to_string())
+                .is_err()
+            {
                 break;
             }
         }
@@ -92,10 +101,16 @@ fn test_pty_spawn_help_command() {
     cmd.arg("--help");
     cmd.env("CHELP_NO_AUTO_SPAWN", "1");
 
-    let mut child = pair.slave.spawn_command(cmd).expect("Failed to spawn process in PTY");
+    let mut child = pair
+        .slave
+        .spawn_command(cmd)
+        .expect("Failed to spawn process in PTY");
     drop(pair.slave);
 
-    let mut reader = pair.master.try_clone_reader().expect("Failed to clone PTY reader");
+    let mut reader = pair
+        .master
+        .try_clone_reader()
+        .expect("Failed to clone PTY reader");
     let (tx, rx) = std::sync::mpsc::channel();
 
     let _reader_thread = std::thread::spawn(move || {
@@ -104,7 +119,10 @@ fn test_pty_spawn_help_command() {
             if n == 0 {
                 break;
             }
-            if tx.send(String::from_utf8_lossy(&buf[..n]).to_string()).is_err() {
+            if tx
+                .send(String::from_utf8_lossy(&buf[..n]).to_string())
+                .is_err()
+            {
                 break;
             }
         }
