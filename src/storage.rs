@@ -71,8 +71,8 @@ impl SchemaStore {
                 .flags
                 .into_iter()
                 .filter(|f| {
-                    f.long.as_ref().map_or(false, |l| l.to_lowercase().starts_with(&prefix_lower))
-                        || f.short.as_ref().map_or(false, |s| s.to_lowercase().starts_with(&prefix_lower))
+                    f.long.as_ref().is_some_and(|l| l.to_lowercase().starts_with(&prefix_lower))
+                        || f.short.as_ref().is_some_and(|s| s.to_lowercase().starts_with(&prefix_lower))
                 })
                 .collect();
             Ok(matches)

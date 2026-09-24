@@ -217,7 +217,7 @@ pub fn parse_justfile_recipes(content: &str) -> Vec<DiscoveredTarget> {
         }
 
         if let Some((recipe_part, _)) = trimmed.split_once(':') {
-            let recipe_name = recipe_part.trim().split_whitespace().next().unwrap_or("");
+            let recipe_name = recipe_part.split_whitespace().next().unwrap_or("");
             if !recipe_name.is_empty() && !recipe_name.starts_with('_') && !recipe_name.starts_with('@') {
                 recipes.push(DiscoveredTarget {
                     name: recipe_name.to_string(),

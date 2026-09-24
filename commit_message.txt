@@ -1,0 +1,5 @@
+🔒 Fix insecure file permissions for configuration
+
+🎯 What: Fixed insecure file permissions when saving the config.toml file.
+⚠️ Risk: If left unfixed, the configuration file (which may contain API keys) would be created with default permissions (usually 0644), allowing other local users to read the file and potentially access sensitive information.
+🛡️ Solution: Updated save_config to explicitly use OpenOptionsExt with .mode(0o600) on Unix systems to ensure that the file is only readable and writable by the file owner.
