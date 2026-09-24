@@ -35,7 +35,9 @@ fn test_save_and_retrieve_schema() {
     assert_eq!(loaded.binary, "testcli");
     assert_eq!(loaded.flags[0].long.as_deref(), Some("--port"));
 
-    let matches = store.match_flags("testcli", &["serve".to_string()], "--p").unwrap();
+    let matches = store
+        .match_flags("testcli", &["serve".to_string()], "--p")
+        .unwrap();
     assert_eq!(matches.len(), 1);
     assert_eq!(matches[0].long.as_deref(), Some("--port"));
 }

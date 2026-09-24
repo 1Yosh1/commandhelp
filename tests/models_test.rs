@@ -1,5 +1,5 @@
 // tests/models_test.rs
-use chelp::models::{CliCommandSchema, CliFlag, SafetyLevel, AiCommandResponse};
+use chelp::models::{AiCommandResponse, CliCommandSchema, CliFlag, SafetyLevel};
 
 #[test]
 fn test_schema_serialization() {
@@ -23,7 +23,8 @@ fn test_schema_serialization() {
     };
 
     let json = serde_json::to_string(&schema).expect("serialization failed");
-    let deserialized: CliCommandSchema = serde_json::from_str(&json).expect("deserialization failed");
+    let deserialized: CliCommandSchema =
+        serde_json::from_str(&json).expect("deserialization failed");
     assert_eq!(deserialized.binary, "docker");
     assert_eq!(deserialized.flags.len(), 1);
     assert_eq!(deserialized.flags[0].long.as_deref(), Some("--verbose"));

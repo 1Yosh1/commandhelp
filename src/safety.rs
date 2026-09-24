@@ -4,16 +4,43 @@ use regex::Regex;
 
 pub fn evaluate_command_safety(command: &str) -> (SafetyLevel, Option<String>) {
     let destructive_patterns = [
-        (r"(?i)\brm\s+-[a-zA-Z]*r[a-zA-Z]*\b", "Recursive file removal (rm -r) permanently deletes data."),
-        (r"(?i)\bRemove-Item\b.*-Recurse", "PowerShell recursive item removal permanently deletes data."),
+        (
+            r"(?i)\brm\s+-[a-zA-Z]*r[a-zA-Z]*\b",
+            "Recursive file removal (rm -r) permanently deletes data.",
+        ),
+        (
+            r"(?i)\bRemove-Item\b.*-Recurse",
+            "PowerShell recursive item removal permanently deletes data.",
+        ),
         (r"(?i)\bdel\b.*(/s|/q)", "Recursive/silent file deletion."),
-        (r"(?i)\b(mkfs|format)\b", "Disk formatting completely wipes storage partitions."),
-        (r"(?i)\bdd\b.*of=/dev/", "Raw disk write can overwrite boot sectors or partitions."),
-        (r"(?i)\b(DROP\s+DATABASE|DROP\s+TABLE|TRUNCATE)\b", "Destructive SQL operation deletes database tables."),
-        (r"(?i)\bgit\s+push\b.*(--force|-f)\b", "Git force-push overwrites remote repository history."),
-        (r"(?i)\bgit\s+reset\s+--hard\b", "Hard git reset discards all uncommitted local changes."),
-        (r"(?i)\bkill\s+-9\b", "SIGKILL forces processes to terminate without saving state."),
-        (r"(?i)\bStop-Process\b.*-Force", "Forces process termination without cleanup."),
+        (
+            r"(?i)\b(mkfs|format)\b",
+            "Disk formatting completely wipes storage partitions.",
+        ),
+        (
+            r"(?i)\bdd\b.*of=/dev/",
+            "Raw disk write can overwrite boot sectors or partitions.",
+        ),
+        (
+            r"(?i)\b(DROP\s+DATABASE|DROP\s+TABLE|TRUNCATE)\b",
+            "Destructive SQL operation deletes database tables.",
+        ),
+        (
+            r"(?i)\bgit\s+push\b.*(--force|-f)\b",
+            "Git force-push overwrites remote repository history.",
+        ),
+        (
+            r"(?i)\bgit\s+reset\s+--hard\b",
+            "Hard git reset discards all uncommitted local changes.",
+        ),
+        (
+            r"(?i)\bkill\s+-9\b",
+            "SIGKILL forces processes to terminate without saving state.",
+        ),
+        (
+            r"(?i)\bStop-Process\b.*-Force",
+            "Forces process termination without cleanup.",
+        ),
     ];
 
     for (pattern, warning) in destructive_patterns {

@@ -14,7 +14,6 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Wrap},
     Terminal,
 };
-use std::io::stdout;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum UserAction {
@@ -28,7 +27,9 @@ pub fn handle_key_event(key: crossterm::event::KeyEvent, command: &str) -> Optio
         KeyCode::Enter => Some(UserAction::Run(command.to_string())),
         KeyCode::Tab | KeyCode::Char('e') => Some(UserAction::Edit(command.to_string())),
         KeyCode::Esc | KeyCode::Char('q') => Some(UserAction::Cancel),
-        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(UserAction::Cancel),
+        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(UserAction::Cancel)
+        }
         _ => None,
     }
 }
@@ -50,22 +51,40 @@ pub fn draw_confirmation_ui<B: ratatui::backend::Backend>(
 
         // 1. Command Block
         let cmd_p = Paragraph::new(resp.command.clone())
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
-            .block(Block::default().borders(Borders::ALL).title(" Suggested Command "));
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Suggested Command "),
+            );
         f.render_widget(cmd_p, chunks[0]);
 
         // 2. Explanation Block
         let exp_p = Paragraph::new(resp.explanation.clone())
             .style(Style::default().fg(Color::White))
             .wrap(Wrap { trim: true })
-            .block(Block::default().borders(Borders::ALL).title(" Explanation "));
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Explanation "),
+            );
         f.render_widget(exp_p, chunks[1]);
 
         // 3. Safety Block
         let (safety_text, safety_style) = match resp.safety_level {
             SafetyLevel::Safe => ("● SAFE (Read-Only)", Style::default().fg(Color::Green)),
-            SafetyLevel::Caution => ("● CAUTION (State Change)", Style::default().fg(Color::Yellow)),
-            SafetyLevel::Destructive => ("▲ HIGH RISK / DESTRUCTIVE ACTION", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            SafetyLevel::Caution => (
+                "● CAUTION (State Change)",
+                Style::default().fg(Color::Yellow),
+            ),
+            SafetyLevel::Destructive => (
+                "▲ HIGH RISK / DESTRUCTIVE ACTION",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
         };
 
         let warning_line = if let Some(w) = &resp.destructive_warning {
@@ -78,7 +97,11 @@ pub fn draw_confirmation_ui<B: ratatui::backend::Backend>(
             Span::styled(safety_text, safety_style),
             Span::raw(warning_line),
         ]))
-        .block(Block::default().borders(Borders::ALL).title(" Safety Assessment "));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Safety Assessment "),
+        );
         f.render_widget(safety_p, chunks[2]);
 
         // 4. Controls Block

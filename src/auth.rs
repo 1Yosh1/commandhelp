@@ -50,16 +50,12 @@ pub fn open_browser(url: &str) {
 
     #[cfg(target_os = "macos")]
     {
-        let _ = std::process::Command::new("open")
-            .arg(url)
-            .spawn();
+        let _ = std::process::Command::new("open").arg(url).spawn();
     }
 
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
     {
-        let _ = std::process::Command::new("xdg-open")
-            .arg(url)
-            .spawn();
+        let _ = std::process::Command::new("xdg-open").arg(url).spawn();
     }
 }
 
@@ -70,19 +66,29 @@ pub async fn run_cli_login(
     auth_url_base: Option<&str>,
 ) -> Result<UserCredentials, ChelpError> {
     let base_url = auth_url_base.unwrap_or("https://commandhelp.dev");
-    let session_id = format!("{:x}{:x}", std::process::id(), std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis());
+    let session_id = format!(
+        "{:x}{:x}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis()
+    );
 
     let listener = TcpListener::bind(("127.0.0.1", port))
         .await
         .map_err(|e| ChelpError::Ipc(format!("Failed to bind port {}: {}", port, e)))?;
 
-    let auth_url = format!("{}/auth/cli?session_id={}&port={}", base_url, session_id, port);
+    let auth_url = format!(
+        "{}/auth/cli?session_id={}&port={}",
+        base_url, session_id, port
+    );
     println!("Opening your browser to authenticate:");
     println!("  {}", auth_url);
-    println!("\nWaiting for authentication callback on http://127.0.0.1:{} ... (Timeout in {}s)", port, timeout_secs);
+    println!(
+        "\nWaiting for authentication callback on http://127.0.0.1:{} ... (Timeout in {}s)",
+        port, timeout_secs
+    );
 
     open_browser(&auth_url);
 
@@ -144,23 +150,28 @@ Connection: close
         let _ = stream.write_all(html_response.as_bytes()).await;
         let _ = stream.flush().await;
 
-        token.map(|t| UserCredentials {
-            token: t,
-            email,
-            plan: plan.or_else(|| Some("Pro".to_string())),
-        }).ok_or_else(|| ChelpError::Config("No token received in callback".to_string()))
+        token
+            .map(|t| UserCredentials {
+                token: t,
+                email,
+                plan: plan.or_else(|| Some("Pro".to_string())),
+            })
+            .ok_or_else(|| ChelpError::Config("No token received in callback".to_string()))
     };
 
     match tokio::time::timeout(Duration::from_secs(timeout_secs), accept_future).await {
         Ok(res) => {
             let creds = res.map_err(|e| ChelpError::Config(format!("Login failed: {}", e)))?;
             save_credentials(&creds)?;
-            println!("✔ Successfully authenticated as {} ({})",
+            println!(
+                "✔ Successfully authenticated as {} ({})",
                 creds.email.as_deref().unwrap_or("Pro User"),
                 creds.plan.as_deref().unwrap_or("Pro Plan")
             );
             Ok(creds)
         }
-        Err(_) => Err(ChelpError::Config("Authentication timed out. Please try again.".to_string())),
+        Err(_) => Err(ChelpError::Config(
+            "Authentication timed out. Please try again.".to_string(),
+        )),
     }
 }

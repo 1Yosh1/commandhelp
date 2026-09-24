@@ -21,7 +21,9 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+ ' -ScriptBlock {
         }
     }
 }
-"#.trim().to_string()),
+"#
+        .trim()
+        .to_string()),
 
         "zsh" => Ok(r#"
 # CommandHelp Zsh Hook
@@ -35,7 +37,9 @@ chelp-query() {
 }
 zle -N chelp-query
 bindkey '^ ' chelp-query
-"#.trim().to_string()),
+"#
+        .trim()
+        .to_string()),
 
         "bash" => Ok(r#"
 # CommandHelp Bash Hook
@@ -47,7 +51,9 @@ _chelp_query() {
     fi
 }
 bind -x '"\C-@": _chelp_query'
-"#.trim().to_string()),
+"#
+        .trim()
+        .to_string()),
 
         _ => Err(ChelpError::Config(format!("Unsupported shell: {}", shell))),
     }

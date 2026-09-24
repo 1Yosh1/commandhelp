@@ -163,7 +163,12 @@ pub fn run_recipe(name: &str, workspace_dir: Option<&Path>) -> Result<Option<Str
     let recipe = recipes
         .into_iter()
         .find(|r| r.name == name)
-        .ok_or_else(|| ChelpError::Config(format!("Recipe '{}' not found. Run 'chelp recipe list'.", name)))?;
+        .ok_or_else(|| {
+            ChelpError::Config(format!(
+                "Recipe '{}' not found. Run 'chelp recipe list'.",
+                name
+            ))
+        })?;
 
     let (safety_level, warning) = recipe.resolved_safety();
 
