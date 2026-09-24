@@ -96,10 +96,9 @@ pub fn save_recipe(
     global: bool,
     workspace_dir: Option<&Path>,
 ) -> Result<PathBuf, ChelpError> {
-    let target_path = if global || workspace_dir.is_none() {
-        get_global_recipes_path()
-    } else {
-        get_workspace_recipes_path(workspace_dir.unwrap())
+    let target_path = match workspace_dir {
+        Some(dir) if !global => get_workspace_recipes_path(dir),
+        _ => get_global_recipes_path(),
     };
 
     if let Some(parent) = target_path.parent() {
@@ -131,10 +130,9 @@ pub fn remove_recipe(
     global: bool,
     workspace_dir: Option<&Path>,
 ) -> Result<bool, ChelpError> {
-    let target_path = if global || workspace_dir.is_none() {
-        get_global_recipes_path()
-    } else {
-        get_workspace_recipes_path(workspace_dir.unwrap())
+    let target_path = match workspace_dir {
+        Some(dir) if !global => get_workspace_recipes_path(dir),
+        _ => get_global_recipes_path(),
     };
 
     if !target_path.exists() {

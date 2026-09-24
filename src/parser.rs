@@ -50,6 +50,7 @@ pub fn parse_help_output(
 
         // Parse flags if line starts with '-'
         if trimmed.starts_with('-') {
+            #[allow(clippy::regex_creation_in_loops)]
             let split_pattern = Regex::new(r"\s{2,}").unwrap();
             let parts: Vec<&str> = split_pattern.splitn(trimmed, 2).collect();
             if parts.len() >= 2 {
@@ -137,4 +138,4 @@ pub fn parse_help_output(
             .unwrap_or_default()
             .as_secs(),
     })
-}
+}

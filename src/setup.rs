@@ -47,7 +47,7 @@ fn setup_shell_profile(exe_path: &str) -> Result<(), ChelpError> {
         let pwsh7_profile = PathBuf::from(&home).join("Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1");
         let win_pwsh_profile = PathBuf::from(&home).join("Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1");
 
-        let target_profile = if pwsh7_profile.parent().map_or(false, |p| p.exists()) {
+        let target_profile = if pwsh7_profile.parent().is_some_and(|p| p.exists()) {
             pwsh7_profile
         } else {
             win_pwsh_profile
