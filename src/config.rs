@@ -6,6 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Default)]
 pub struct ChelpConfig {
     #[serde(default)]
     pub ai: AiConfig,
@@ -30,13 +31,6 @@ impl Default for AiConfig {
     }
 }
 
-impl Default for ChelpConfig {
-    fn default() -> Self {
-        Self {
-            ai: AiConfig::default(),
-        }
-    }
-}
 
 pub fn get_config_dir() -> PathBuf {
     if let Some(proj_dirs) = ProjectDirs::from("dev", "chelp", "chelp") {
@@ -58,6 +52,11 @@ fn dirs_fallback() -> PathBuf {
 }
 
 pub fn get_config_path() -> PathBuf {
+    // For testing
+    if let Ok(path) = std::env::var("CHELP_CONFIG_PATH_OVERRIDE") {
+        return PathBuf::from(path);
+    }
+
     // Check ~/.chelp/config.toml first
     let home_cfg = dirs_fallback().join("config.toml");
     if home_cfg.exists() {
@@ -100,6 +99,16 @@ pub fn save_config(config: &ChelpConfig) -> Result<PathBuf, ChelpError> {
     }
     let content = toml::to_string_pretty(config)
         .map_err(|e| ChelpError::Config(format!("Failed to serialize config: {}", e)))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        let mut options = std::fs::OpenOptions::new();
+        options.write(true).create(true).truncate(true).mode(0o600);
+        let mut file = options.open(&path)?;
+        use std::io::Write;
+        file.write_all(content.as_bytes())?;
+    }
+    #[cfg(not(unix))]
     fs::write(&path, content)?;
     Ok(path)
 }
