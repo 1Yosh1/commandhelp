@@ -39,3 +39,10 @@ fn test_save_and_retrieve_schema() {
     assert_eq!(matches.len(), 1);
     assert_eq!(matches[0].long.as_deref(), Some("--port"));
 }
+
+#[test]
+fn test_schema_store_new_with_invalid_path() {
+    let tmp_dir = tempfile::tempdir().unwrap();
+    let result = SchemaStore::new(tmp_dir.path());
+    assert!(result.is_err());
+}
