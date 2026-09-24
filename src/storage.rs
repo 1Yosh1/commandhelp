@@ -47,6 +47,27 @@ impl SchemaStore {
         Ok(())
     }
 
+    pub fn save_schemas(&self, schemas: &[CliCommandSchema]) -> Result<(), ChelpError> {
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        {
+            let mut stmt = tx.prepare("INSERT OR REPLACE INTO cli_schemas (binary, subcommand_path, schema_json, binary_mtime, last_indexed) VALUES (?1, ?2, ?3, ?4, ?5)")?;
+            for schema in schemas {
+                let subcmd_str = schema.subcommand_path.join(" ");
+                let schema_json = serde_json::to_string(schema)?;
+                stmt.execute(params![
+                    schema.binary,
+                    subcmd_str,
+                    schema_json,
+                    schema.binary_mtime as i64,
+                    schema.last_indexed as i64
+                ])?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     pub fn get_schema(&self, binary: &str, subcommands: &[String]) -> Result<Option<CliCommandSchema>, ChelpError> {
         let subcmd_str = subcommands.join(" ");
         let conn = self.conn.lock().unwrap();

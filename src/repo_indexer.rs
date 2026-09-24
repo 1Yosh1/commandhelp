@@ -14,6 +14,7 @@ pub struct DiscoveredTarget {
 /// Indexes project files in the workspace (Makefile, Justfile, package.json, docker-compose)
 pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usize, ChelpError> {
     let mut total_indexed = 0;
+    let mut schemas = Vec::new();
 
     // 1. Makefile
     let makefile_path = workspace_dir.join("Makefile");
@@ -43,7 +44,7 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                         .unwrap_or_default()
                         .as_secs(),
                 };
-                store.save_schema(&schema)?;
+                schemas.push(schema);
                 total_indexed += targets.len();
             }
         }
@@ -68,7 +69,7 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                         .unwrap_or_default()
                         .as_secs(),
                 };
-                store.save_schema(&schema)?;
+                schemas.push(schema);
                 total_indexed += scripts.len();
             }
         }
@@ -102,7 +103,7 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                         .unwrap_or_default()
                         .as_secs(),
                 };
-                store.save_schema(&schema)?;
+                schemas.push(schema);
                 total_indexed += recipes.len();
             }
         }
@@ -134,12 +135,16 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                             .unwrap_or_default()
                             .as_secs(),
                     };
-                    store.save_schema(&schema)?;
+                    schemas.push(schema);
                     total_indexed += services.len();
                 }
             }
             break;
         }
+    }
+
+    if !schemas.is_empty() {
+        store.save_schemas(&schemas)?;
     }
 
     Ok(total_indexed)
