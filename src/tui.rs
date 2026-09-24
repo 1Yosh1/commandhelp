@@ -14,7 +14,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Wrap},
     Terminal,
 };
-use std::io::stdout;
+
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum UserAction {
