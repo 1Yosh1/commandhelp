@@ -6,6 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Default)]
 pub struct ChelpConfig {
     #[serde(default)]
     pub ai: AiConfig,
@@ -30,13 +31,6 @@ impl Default for AiConfig {
     }
 }
 
-impl Default for ChelpConfig {
-    fn default() -> Self {
-        Self {
-            ai: AiConfig::default(),
-        }
-    }
-}
 
 pub fn get_config_dir() -> PathBuf {
     if let Some(proj_dirs) = ProjectDirs::from("dev", "chelp", "chelp") {

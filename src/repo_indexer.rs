@@ -12,122 +12,33 @@ pub struct DiscoveredTarget {
 }
 
 /// Indexes project files in the workspace (Makefile, Justfile, package.json, docker-compose)
-pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usize, ChelpError> {
-    let mut total_indexed = 0;
-
-    // 1. Makefile
-    let makefile_path = workspace_dir.join("Makefile");
-    let alt_makefile = workspace_dir.join("makefile");
-    let target_makefile = if makefile_path.exists() {
-        Some(makefile_path)
-    } else if alt_makefile.exists() {
-        Some(alt_makefile)
-    } else {
-        None
-    };
-
-    if let Some(mf) = target_makefile {
-        if let Ok(content) = fs::read_to_string(&mf) {
-            let targets = parse_makefile_targets(&content);
-            if !targets.is_empty() {
-                let schema = CliCommandSchema {
-                    binary: "make".to_string(),
-                    subcommand_path: vec![],
-                    usage: "make <target>".to_string(),
-                    description: "Project Makefile targets".to_string(),
-                    flags: vec![],
-                    subcommands: targets.iter().map(|t| t.name.clone()).collect(),
-                    binary_mtime: 0,
-                    last_indexed: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_secs(),
-                };
-                store.save_schema(&schema)?;
-                total_indexed += targets.len();
-            }
-        }
-    }
-
-    // 2. package.json
-    let pkg_path = workspace_dir.join("package.json");
-    if pkg_path.exists() {
-        if let Ok(content) = fs::read_to_string(&pkg_path) {
-            let scripts = parse_package_json_scripts(&content);
-            if !scripts.is_empty() {
-                let schema = CliCommandSchema {
-                    binary: "npm".to_string(),
-                    subcommand_path: vec!["run".to_string()],
-                    usage: "npm run <script>".to_string(),
-                    description: "Project package.json scripts".to_string(),
-                    flags: vec![],
-                    subcommands: scripts.iter().map(|s| s.name.clone()).collect(),
-                    binary_mtime: 0,
-                    last_indexed: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_secs(),
-                };
-                store.save_schema(&schema)?;
-                total_indexed += scripts.len();
-            }
-        }
-    }
-
-    // 3. Justfile
-    let justfile_path = workspace_dir.join("Justfile");
-    let alt_justfile = workspace_dir.join("justfile");
-    let target_justfile = if justfile_path.exists() {
-        Some(justfile_path)
-    } else if alt_justfile.exists() {
-        Some(alt_justfile)
-    } else {
-        None
-    };
-
-    if let Some(jf) = target_justfile {
-        if let Ok(content) = fs::read_to_string(&jf) {
-            let recipes = parse_justfile_recipes(&content);
-            if !recipes.is_empty() {
-                let schema = CliCommandSchema {
-                    binary: "just".to_string(),
-                    subcommand_path: vec![],
-                    usage: "just <recipe>".to_string(),
-                    description: "Project Justfile recipes".to_string(),
-                    flags: vec![],
-                    subcommands: recipes.iter().map(|r| r.name.clone()).collect(),
-                    binary_mtime: 0,
-                    last_indexed: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_secs(),
-                };
-                store.save_schema(&schema)?;
-                total_indexed += recipes.len();
-            }
-        }
-    }
-
-    // 4. Docker Compose
-    let compose_files = [
-        "docker-compose.yml",
-        "docker-compose.yaml",
-        "compose.yml",
-        "compose.yaml",
-    ];
-    for cf in compose_files {
-        let compose_path = workspace_dir.join(cf);
-        if compose_path.exists() {
-            if let Ok(content) = fs::read_to_string(&compose_path) {
-                let services = parse_docker_compose_services(&content);
-                if !services.is_empty() {
+#[allow(clippy::too_many_arguments)]
+fn index_runner_file<F>(
+    workspace_dir: &Path,
+    store: &SchemaStore,
+    filenames: &[&str],
+    binary: &str,
+    subcommand_path: Vec<String>,
+    usage: &str,
+    description: &str,
+    parse_fn: F,
+) -> Result<usize, ChelpError>
+where
+    F: Fn(&str) -> Vec<String>,
+{
+    for fname in filenames {
+        let file_path = workspace_dir.join(fname);
+        if file_path.exists() {
+            if let Ok(content) = fs::read_to_string(&file_path) {
+                let subcommands = parse_fn(&content);
+                if !subcommands.is_empty() {
                     let schema = CliCommandSchema {
-                        binary: "docker-compose".to_string(),
-                        subcommand_path: vec!["up".to_string()],
-                        usage: "docker compose up <service>".to_string(),
-                        description: "Docker compose services".to_string(),
+                        binary: binary.to_string(),
+                        subcommand_path,
+                        usage: usage.to_string(),
+                        description: description.to_string(),
                         flags: vec![],
-                        subcommands: services.clone(),
+                        subcommands: subcommands.clone(),
                         binary_mtime: 0,
                         last_indexed: std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
@@ -135,12 +46,85 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                             .as_secs(),
                     };
                     store.save_schema(&schema)?;
-                    total_indexed += services.len();
+                    return Ok(subcommands.len());
                 }
             }
             break;
         }
     }
+    Ok(0)
+}
+
+pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usize, ChelpError> {
+    let mut total_indexed = 0;
+
+    // 1. Makefile
+    total_indexed += index_runner_file(
+        workspace_dir,
+        store,
+        &["Makefile", "makefile"],
+        "make",
+        vec![],
+        "make <target>",
+        "Project Makefile targets",
+        |content| {
+            parse_makefile_targets(content)
+                .into_iter()
+                .map(|t| t.name)
+                .collect()
+        },
+    )?;
+
+    // 2. package.json
+    total_indexed += index_runner_file(
+        workspace_dir,
+        store,
+        &["package.json"],
+        "npm",
+        vec!["run".to_string()],
+        "npm run <script>",
+        "Project package.json scripts",
+        |content| {
+            parse_package_json_scripts(content)
+                .into_iter()
+                .map(|t| t.name)
+                .collect()
+        },
+    )?;
+
+    // 3. Justfile
+    total_indexed += index_runner_file(
+        workspace_dir,
+        store,
+        &["Justfile", "justfile"],
+        "just",
+        vec![],
+        "just <recipe>",
+        "Project Justfile recipes",
+        |content| {
+            parse_justfile_recipes(content)
+                .into_iter()
+                .map(|t| t.name)
+                .collect()
+        },
+    )?;
+
+    // 4. Docker Compose
+    total_indexed += index_runner_file(
+        workspace_dir,
+        store,
+        &[
+            "docker-compose.yml",
+            "docker-compose.yaml",
+            "compose.yml",
+            "compose.yaml",
+        ],
+        "docker-compose",
+        vec!["up".to_string()],
+        "docker compose up <service>",
+        "Docker compose services",
+        parse_docker_compose_services,
+    )?;
 
     Ok(total_indexed)
 }
@@ -217,8 +201,11 @@ pub fn parse_justfile_recipes(content: &str) -> Vec<DiscoveredTarget> {
         }
 
         if let Some((recipe_part, _)) = trimmed.split_once(':') {
-            let recipe_name = recipe_part.trim().split_whitespace().next().unwrap_or("");
-            if !recipe_name.is_empty() && !recipe_name.starts_with('_') && !recipe_name.starts_with('@') {
+            let recipe_name = recipe_part.split_whitespace().next().unwrap_or("");
+            if !recipe_name.is_empty()
+                && !recipe_name.starts_with('_')
+                && !recipe_name.starts_with('@')
+            {
                 recipes.push(DiscoveredTarget {
                     name: recipe_name.to_string(),
                     description: last_comment.take(),
