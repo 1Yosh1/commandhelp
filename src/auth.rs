@@ -36,7 +36,25 @@ pub fn save_credentials(creds: &UserCredentials) -> Result<PathBuf, ChelpError> 
         let _ = fs::create_dir_all(parent);
     }
     let json = serde_json::to_string_pretty(creds)?;
-    fs::write(&path, json)?;
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(&path)?;
+        use std::io::Write;
+        file.write_all(json.as_bytes())?;
+    }
+
+    #[cfg(not(unix))]
+    {
+        fs::write(&path, json)?;
+    }
+
     Ok(path)
 }
 
