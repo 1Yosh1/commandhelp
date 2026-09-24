@@ -34,9 +34,7 @@ enum Commands {
         detached: bool,
     },
     /// Request completion for current command line buffer
-    Complete {
-        buffer: String,
-    },
+    Complete { buffer: String },
     /// Query the AI assistant with natural language
     Query {
         prompt: String,
@@ -49,9 +47,7 @@ enum Commands {
         port: u16,
     },
     /// Generate shell hook script (pwsh, zsh, bash)
-    Init {
-        shell: String,
-    },
+    Init { shell: String },
     /// 📚 Manage team & local command runbooks and recipes
     Recipe {
         #[command(subcommand)]
@@ -81,9 +77,7 @@ enum RecipeCommands {
         global: bool,
     },
     /// ▶️ Run a command recipe with interactive confirmation
-    Run {
-        name: String,
-    },
+    Run { name: String },
     /// 🗑️ Remove a command recipe by name
     Remove {
         name: String,
@@ -115,7 +109,9 @@ async fn main() -> Result<(), ChelpError> {
             handle.await.map_err(|e| ChelpError::Ipc(e.to_string()))?;
         }
         Commands::Complete { buffer } => {
-            if let Ok(IpcResponse::Suggestions { flags }) = send_ipc_request(socket_name, &IpcRequest::Complete { buffer }).await {
+            if let Ok(IpcResponse::Suggestions { flags }) =
+                send_ipc_request(socket_name, &IpcRequest::Complete { buffer }).await
+            {
                 for f in flags {
                     if let Some(long) = f.long {
                         println!("{}\t{}", long, f.description);
@@ -175,7 +171,9 @@ async fn main() -> Result<(), ChelpError> {
                             let safety_str = match safety {
                                 chelp::models::SafetyLevel::Safe => "SAFE",
                                 chelp::models::SafetyLevel::Caution => "CAUTION",
-                                chelp::models::SafetyLevel::Destructive => "HIGH RISK / DESTRUCTIVE",
+                                chelp::models::SafetyLevel::Destructive => {
+                                    "HIGH RISK / DESTRUCTIVE"
+                                }
                             };
                             println!("• {}", r.name);
                             println!("  Command:     {}", r.command);
@@ -223,7 +221,10 @@ async fn main() -> Result<(), ChelpError> {
             let store = SchemaStore::new(&get_db_path())?;
             let target_path = std::path::Path::new(&path);
             let count = chelp::repo_indexer::index_workspace(target_path, &store)?;
-            println!("✔ Indexed {} project targets/scripts into local store.", count);
+            println!(
+                "✔ Indexed {} project targets/scripts into local store.",
+                count
+            );
         }
     }
 

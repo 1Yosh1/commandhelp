@@ -22,12 +22,22 @@ Commands:
   logs        Fetch the logs of a container
 "#;
 
-    let schema = parse_help_output("docker", &["run".to_string()], help_text).expect("parser failed");
+    let schema =
+        parse_help_output("docker", &["run".to_string()], help_text).expect("parser failed");
     assert_eq!(schema.binary, "docker");
     assert_eq!(schema.subcommand_path, vec!["run".to_string()]);
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--detach") && f.short.as_deref() == Some("-d")));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--rm") && !f.takes_value));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--name") && f.takes_value));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--detach") && f.short.as_deref() == Some("-d")));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--rm") && !f.takes_value));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--name") && f.takes_value));
     assert!(schema.subcommands.contains(&"exec".to_string()));
     assert!(schema.subcommands.contains(&"logs".to_string()));
 }
@@ -51,9 +61,18 @@ fn test_parse_kubectl_fixture() {
     assert!(schema.subcommands.contains(&"logs".to_string()));
     assert!(schema.subcommands.contains(&"exec".to_string()));
     // Verify flags
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--namespace") && f.short.as_deref() == Some("-n")));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--kubeconfig")));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--insecure-skip-tls-verify") && !f.takes_value));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--namespace") && f.short.as_deref() == Some("-n")));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--kubeconfig")));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--insecure-skip-tls-verify") && !f.takes_value));
 }
 
 #[test]
@@ -65,8 +84,14 @@ fn test_parse_gh_fixture() {
     assert!(schema.subcommands.contains(&"pr".to_string()));
     assert!(schema.subcommands.contains(&"repo".to_string()));
     assert!(schema.subcommands.contains(&"workflow".to_string()));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--help") && f.short.as_deref() == Some("-h")));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--version")));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--help") && f.short.as_deref() == Some("-h")));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--version")));
 }
 
 #[test]
@@ -75,10 +100,35 @@ fn test_parse_tar_fixture() {
     let schema = parse_help_output("tar", &[], help_text).expect("tar parsing failed");
     assert_eq!(schema.binary, "tar");
     // Verify operation modes and modifiers
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--create") && f.short.as_deref() == Some("-c")));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--extract") && f.short.as_deref() == Some("-x")));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--verbose") && f.short.as_deref() == Some("-v")));
-    assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--file") && f.takes_value));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--create") && f.short.as_deref() == Some("-c")));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--extract") && f.short.as_deref() == Some("-x")));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--verbose") && f.short.as_deref() == Some("-v")));
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.long.as_deref() == Some("--file") && f.takes_value));
     // Verify short-only flag
-    assert!(schema.flags.iter().any(|f| f.short.as_deref() == Some("-h") && f.long.is_none()));
-}
+    assert!(schema
+        .flags
+        .iter()
+        .any(|f| f.short.as_deref() == Some("-h") && f.long.is_none()));
+}
+#[test]
+fn test_parse_empty_help_output() {
+    let schema = parse_help_output("cmd", &["sub".to_string()], "").expect("parser failed");
+    assert_eq!(schema.binary, "cmd");
+    assert_eq!(schema.subcommand_path, vec!["sub".to_string()]);
+    assert!(schema.usage.is_empty());
+    assert!(schema.description.is_empty());
+    assert!(schema.flags.is_empty());
+    assert!(schema.subcommands.is_empty());
+}

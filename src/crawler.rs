@@ -1,4 +1,4 @@
-﻿use crate::error::ChelpError;
+use crate::error::ChelpError;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
@@ -32,7 +32,10 @@ pub fn crawl_command_help(binary: &str, subcommands: &[String]) -> Result<String
             None => {
                 if start.elapsed() > Duration::from_millis(1500) {
                     let _ = child.kill();
-                    return Err(ChelpError::Parser(format!("Timed out reading help from '{}'", binary)));
+                    return Err(ChelpError::Parser(format!(
+                        "Timed out reading help from '{}'",
+                        binary
+                    )));
                 }
                 std::thread::sleep(Duration::from_millis(20));
             }
