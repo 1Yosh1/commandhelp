@@ -14,6 +14,10 @@ pub struct DiscoveredTarget {
 /// Indexes project files in the workspace (Makefile, Justfile, package.json, docker-compose)
 pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usize, ChelpError> {
     let mut total_indexed = 0;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
 
     // 1. Makefile
     let makefile_path = workspace_dir.join("Makefile");
@@ -38,10 +42,7 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                     flags: vec![],
                     subcommands: targets.iter().map(|t| t.name.clone()).collect(),
                     binary_mtime: 0,
-                    last_indexed: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_secs(),
+                    last_indexed: now,
                 };
                 store.save_schema(&schema)?;
                 total_indexed += targets.len();
@@ -63,10 +64,7 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                     flags: vec![],
                     subcommands: scripts.iter().map(|s| s.name.clone()).collect(),
                     binary_mtime: 0,
-                    last_indexed: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_secs(),
+                    last_indexed: now,
                 };
                 store.save_schema(&schema)?;
                 total_indexed += scripts.len();
@@ -97,10 +95,7 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                     flags: vec![],
                     subcommands: recipes.iter().map(|r| r.name.clone()).collect(),
                     binary_mtime: 0,
-                    last_indexed: std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_secs(),
+                    last_indexed: now,
                 };
                 store.save_schema(&schema)?;
                 total_indexed += recipes.len();
@@ -129,10 +124,7 @@ pub fn index_workspace(workspace_dir: &Path, store: &SchemaStore) -> Result<usiz
                         flags: vec![],
                         subcommands: services.clone(),
                         binary_mtime: 0,
-                        last_indexed: std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap_or_default()
-                            .as_secs(),
+                        last_indexed: now,
                     };
                     store.save_schema(&schema)?;
                     total_indexed += services.len();
