@@ -140,13 +140,18 @@ fn test_render_interactive_confirmation_with_mock_events() {
     let action = render_interactive_confirmation_with(
         &mut terminal,
         || {
-            events
-                .pop_front()
-                .ok_or_else(|| ChelpError::Io(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "No more events")))
+            events.pop_front().ok_or_else(|| {
+                ChelpError::Io(std::io::Error::new(
+                    std::io::ErrorKind::UnexpectedEof,
+                    "No more events",
+                ))
+            })
         },
         &resp,
     );
 
-    assert_eq!(action.unwrap(), UserAction::Edit("cargo check --release".to_string()));
+    assert_eq!(
+        action.unwrap(),
+        UserAction::Edit("cargo check --release".to_string())
+    );
 }
-

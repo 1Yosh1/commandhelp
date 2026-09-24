@@ -13,9 +13,7 @@ pub fn parse_help_output(
     let mut usage = String::new();
 
     // Matches subcommands: "  create      Create a resource", "  auth:    Authenticate"
-    let subcmd_re = Regex::new(
-        r"^\s{2,}([a-zA-Z0-9_-]+):?\s{2,}(.*)$"
-    ).unwrap();
+    let subcmd_re = Regex::new(r"^\s{2,}([a-zA-Z0-9_-]+):?\s{2,}(.*)$").unwrap();
 
     let mut in_commands_section = false;
     let mut in_options_section = false;
@@ -35,13 +33,20 @@ pub fn parse_help_output(
         }
 
         // Detect section headers
-        let is_all_caps = trimmed.len() >= 4 && trimmed.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_whitespace());
+        let is_all_caps = trimmed.len() >= 4
+            && trimmed
+                .chars()
+                .all(|c| c.is_ascii_uppercase() || c.is_ascii_whitespace());
         if trimmed.ends_with(':') || is_all_caps {
             if lower.contains("command") {
                 in_commands_section = true;
                 in_options_section = false;
                 continue;
-            } else if lower.contains("option") || lower.contains("flag") || lower.contains("mode") || lower.contains("modifier") {
+            } else if lower.contains("option")
+                || lower.contains("flag")
+                || lower.contains("mode")
+                || lower.contains("modifier")
+            {
                 in_options_section = true;
                 in_commands_section = false;
                 continue;
@@ -114,12 +119,22 @@ pub fn parse_help_output(
         // Parse subcommands
         if in_commands_section {
             if let Some(caps) = subcmd_re.captures(line) {
-                let cmd_name = caps.get(1).map(|m| m.as_str().trim_end_matches(':').to_string()).unwrap();
-                if !cmd_name.starts_with('-') && cmd_name.len() >= 2 && !detected_subcommands.contains(&cmd_name) {
+                let cmd_name = caps
+                    .get(1)
+                    .map(|m| m.as_str().trim_end_matches(':').to_string())
+                    .unwrap();
+                if !cmd_name.starts_with('-')
+                    && cmd_name.len() >= 2
+                    && !detected_subcommands.contains(&cmd_name)
+                {
                     detected_subcommands.push(cmd_name);
                 }
             }
-        } else if !in_options_section && description.is_empty() && !trimmed.starts_with('-') && !lower.starts_with("usage") {
+        } else if !in_options_section
+            && description.is_empty()
+            && !trimmed.starts_with('-')
+            && !lower.starts_with("usage")
+        {
             description = trimmed.to_string();
         }
     }
@@ -137,4 +152,4 @@ pub fn parse_help_output(
             .unwrap_or_default()
             .as_secs(),
     })
-}
+}

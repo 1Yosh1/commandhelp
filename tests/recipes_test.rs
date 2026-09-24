@@ -50,7 +50,10 @@ fn test_recipe_lifecycle_in_workspace() {
 
     let loaded2 = load_recipes(Some(ws)).unwrap();
     let found_destructive = loaded2.iter().find(|r| r.name == "test-nuke-db").unwrap();
-    assert_eq!(found_destructive.resolved_safety().0, SafetyLevel::Destructive);
+    assert_eq!(
+        found_destructive.resolved_safety().0,
+        SafetyLevel::Destructive
+    );
 
     // 5. Remove recipe
     let removed = remove_recipe("test-build", false, Some(ws)).unwrap();
