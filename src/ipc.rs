@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::task::JoinHandle;
 
+const MAX_IPC_MSG_LEN: usize = 10 * 1024 * 1024; // 10 MB
+
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", content = "data")]
 pub enum IpcRequest {
@@ -87,6 +89,10 @@ pub async fn send_ipc_request(name: &str, req: &IpcRequest) -> Result<IpcRespons
     stream.read_exact(&mut res_len_buf).await?;
     let res_len = u32::from_le_bytes(res_len_buf) as usize;
 
+    if res_len > MAX_IPC_MSG_LEN {
+        return Err(ChelpError::Ipc("IPC response too large".to_string()));
+    }
+
     let mut res_buf = vec![0u8; res_len];
     stream.read_exact(&mut res_buf).await?;
 
@@ -112,6 +118,9 @@ pub async fn start_daemon(store: SchemaStore, name: &str) -> Result<JoinHandle<(
                     return;
                 }
                 let len = u32::from_le_bytes(len_buf) as usize;
+                if len > MAX_IPC_MSG_LEN {
+                    return;
+                }
                 let mut buf = vec![0u8; len];
                 if stream.read_exact(&mut buf).await.is_err() {
                     return;
