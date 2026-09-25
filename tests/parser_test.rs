@@ -81,4 +81,23 @@ fn test_parse_tar_fixture() {
     assert!(schema.flags.iter().any(|f| f.long.as_deref() == Some("--file") && f.takes_value));
     // Verify short-only flag
     assert!(schema.flags.iter().any(|f| f.short.as_deref() == Some("-h") && f.long.is_none()));
-}
+}
+#[test]
+fn bench_parse_help() {
+    use std::time::Instant;
+    let help_text = include_str!("fixtures/kubectl_help.txt");
+
+    // Warmup
+    for _ in 0..10 {
+        let _ = parse_help_output("kubectl", &[], help_text);
+    }
+
+    let start = Instant::now();
+    let iters = 1000;
+    for _ in 0..iters {
+        let _ = parse_help_output("kubectl", &[], help_text);
+    }
+    let duration = start.elapsed();
+    println!("Parsed {} times in {:?}", iters, duration);
+    println!("Average time per parse: {:?}", duration / iters);
+}

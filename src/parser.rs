@@ -12,7 +12,9 @@ pub fn parse_help_output(
     let mut description = String::new();
     let mut usage = String::new();
 
+    let split_pattern = Regex::new(r"\s{2,}").unwrap();
     // Matches subcommands: "  create      Create a resource", "  auth:    Authenticate"
+
     let subcmd_re = Regex::new(
         r"^\s{2,}([a-zA-Z0-9_-]+):?\s{2,}(.*)$"
     ).unwrap();
@@ -50,7 +52,7 @@ pub fn parse_help_output(
 
         // Parse flags if line starts with '-'
         if trimmed.starts_with('-') {
-            let split_pattern = Regex::new(r"\s{2,}").unwrap();
+
             let parts: Vec<&str> = split_pattern.splitn(trimmed, 2).collect();
             if parts.len() >= 2 {
                 let flags_part = parts[0];
@@ -137,4 +139,4 @@ pub fn parse_help_output(
             .unwrap_or_default()
             .as_secs(),
     })
-}
+}
