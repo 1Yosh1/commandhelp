@@ -1,0 +1,23 @@
+Usage: terraform [global options] <subcommand> [args]
+
+Global Options:
+  -chdir=DIR        Switch to a different working directory before executing
+  -help             Show this help output
+  -version          An alias for the "version" subcommand
+
+Subcommands:
+  init              Initialize Terraform in the current directory
+  plan              Generate and show an execution plan
+  apply             Apply changes to reach the desired infrastructure state
+  destroy           Destroy Terraform-managed infrastructure
+  output            Show output values from your state
+  state             Advanced state manipulation
+  fmt               Rewrite config files to canonical format
+  validate          Validate config files for syntax and internal consistency
+  console           Interactive console for evaluating expressions
+  import            Import existing infrastructure into Terraform state
+  workspace         Workspace management
+
+Options:
+  -no-color         Disable terminal colors for any output
+  -compact-warnings Only show the first line of each warning

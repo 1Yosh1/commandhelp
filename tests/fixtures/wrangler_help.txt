@@ -1,0 +1,22 @@
+Cloudflare Wrangler
+
+Usage:
+  wrangler [command]
+
+Commands:
+  dev         Start a local development server
+  deploy      Deploy your Worker to Cloudflare
+  publish     Publish your Worker (alias of deploy)
+  secret      Manage Worker secrets
+  kv          Manage Workers KV namespaces
+  r2          Manage R2 buckets
+  d1          Manage D1 databases
+  logs        Tail logs from a Worker
+  triggers    Manage routes and domains for a Worker
+  whoami      Display your account and Wrangler configuration
+
+Flags:
+  -j, --json             Return output as JSON
+  -c, --config path      Path to the Wrangler configuration file
+  -e, --env name         Environment to use for commands
+  -h, --help             Show help

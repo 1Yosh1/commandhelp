@@ -1,0 +1,24 @@
+The Kubernetes package manager
+
+Usage:
+  helm [command]
+
+Available Commands:
+  install       Install a chart
+  uninstall     Uninstall a chart
+  upgrade       Upgrade a chart
+  list          List releases
+  search        Search for charts
+  repo          Manage chart repositories
+  template      Render local chart templates
+  lint          Check a chart for possible issues
+  test          Run tests for a release
+  version       Show the version of Helm
+
+Flags:
+  -h, --help                    help for helm
+      --kubeconfig string       path to the kubeconfig file
+  -n, --namespace string        namespace scope for the request
+      --qps float                query per second for requests (default 50)
+
+Use "helm [command] --help" for more information about a command.

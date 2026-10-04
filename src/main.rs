@@ -1,15 +1,19 @@
 // src/main.rs
 use chelp::ai::create_provider_from_config;
-use chelp::config::{get_config_dir, load_config};
+use chelp::complete;
+use chelp::config::{get_db_path, load_config};
 use chelp::error::ChelpError;
-use chelp::ipc::{send_ipc_request, start_daemon, IpcRequest, IpcResponse};
+use chelp::ipc::{
+    cleanup_socket, send_ipc_request, spawn_daemon_detached, start_daemon, IpcRequest,
+    IpcResponse, COMPLETE_BUDGET, DEFAULT_SOCKET_NAME,
+};
+use chelp::log::log;
 use chelp::models::ShellContext;
 use chelp::setup::{run_config_wizard, run_setup};
 use chelp::shell::generate_hook_script;
 use chelp::storage::SchemaStore;
 use chelp::tui::{render_interactive_confirmation, UserAction};
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(
@@ -30,6 +34,7 @@ enum Commands {
     Config,
     /// Start the background daemon
     Daemon {
+        /// Spawn the daemon in the background and return immediately
         #[arg(long)]
         detached: bool,
     },
@@ -48,81 +53,73 @@ enum Commands {
         #[arg(long, default_value = "4321")]
         port: u16,
     },
-    /// Generate shell hook script (pwsh, zsh, bash)
+    /// Generate shell hook script (pwsh, zsh, bash, fish)
     Init {
         shell: String,
     },
-    /// 📚 Manage team & local command runbooks and recipes
-    Recipe {
-        #[command(subcommand)]
-        action: RecipeCommands,
-    },
-    /// 🔍 Index workspace scripts, Makefiles, package.json for zero-latency completion
-    IndexRepo {
-        #[arg(long, default_value = ".")]
-        path: String,
-    },
 }
 
-#[derive(Subcommand)]
-enum RecipeCommands {
-    /// 📋 List all available recipes (workspace + global)
-    List,
-    /// ➕ Add a new command recipe to workspace (.chelp/recipes.toml) or global
-    Add {
-        name: String,
-        #[arg(short, long)]
-        cmd: String,
-        #[arg(short, long)]
-        desc: String,
-        #[arg(short, long)]
-        tag: Vec<String>,
-        #[arg(long)]
-        global: bool,
-    },
-    /// ▶️ Run a command recipe with interactive confirmation
-    Run {
-        name: String,
-    },
-    /// 🗑️ Remove a command recipe by name
-    Remove {
-        name: String,
-        #[arg(long)]
-        global: bool,
-    },
-}
-
-fn get_db_path() -> PathBuf {
-    get_config_dir().join("data.db")
+/// Socket name shared by client and daemon (`CHELP_SOCKET` overrides it so
+/// tests never fight a developer's running daemon).
+fn socket_name() -> String {
+    std::env::var("CHELP_SOCKET").unwrap_or_else(|_| DEFAULT_SOCKET_NAME.to_string())
 }
 
 #[tokio::main]
-async fn main() -> Result<(), ChelpError> {
+async fn main() {
+    if let Err(e) = run().await {
+        // Surface failures with their Display message instead of a Debug dump.
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
+    }
+}
+
+async fn run() -> Result<(), ChelpError> {
+    let socket_name = socket_name();
     let cli = Cli::parse();
-    let socket_name = "chelp-ipc";
 
     match cli.command {
-        Commands::Setup => {
-            run_setup().await?;
-        }
-        Commands::Config => {
-            run_config_wizard().await?;
-        }
-        Commands::Daemon { detached: _ } => {
+        Commands::Setup => run_setup().await?,
+        Commands::Config => run_config_wizard().await?,
+
+        Commands::Daemon { detached } => {
+            if detached {
+                // Spec §2.1/§2.2: spawn only when nothing is listening yet, so
+                // every shell startup stays a no-op after the first one.
+                if !chelp::ipc::is_running(&socket_name).await {
+                    spawn_daemon_detached();
+                }
+                return Ok(());
+            }
             let store = SchemaStore::new(&get_db_path())?;
-            println!("Starting chelp daemon on {}", socket_name);
-            let handle = start_daemon(store, socket_name).await?;
-            handle.await.map_err(|e| ChelpError::Ipc(e.to_string()))?;
+            println!("chelpd listening on '{}'", socket_name);
+            let handle = start_daemon(store, &socket_name).await?;
+            let _ = handle.await;
+            cleanup_socket(&socket_name);
         }
+
         Commands::Complete { buffer } => {
-            if let Ok(IpcResponse::Suggestions { flags }) = send_ipc_request(socket_name, &IpcRequest::Complete { buffer }).await {
-                for f in flags {
-                    if let Some(long) = f.long {
-                        println!("{}\t{}", long, f.description);
+            let request = IpcRequest::Complete { buffer: buffer.clone() };
+            match send_ipc_request(&socket_name, &request, COMPLETE_BUDGET).await {
+                Ok(IpcResponse::Suggestions { lines }) => {
+                    for line in lines {
+                        println!("{}", line);
                     }
+                }
+                other => {
+                    let detail = match other {
+                        Ok(IpcResponse::Error { message }) => message,
+                        Ok(_) => "unexpected daemon response".to_string(),
+                        Err(e) => e.to_string(),
+                    };
+                    // Diagnostics go to the log (spec §2.3) and, when invoked by
+                    // hand, to stderr — hooks silence stderr so typing never stutters.
+                    log("client", &format!("complete {:?} -> {}", buffer, detail));
+                    eprintln!("chelp: {}", detail);
                 }
             }
         }
+
         Commands::Query { prompt, out_file } => {
             let config = load_config()?;
             let provider = match create_provider_from_config(&config.ai) {
@@ -136,94 +133,37 @@ async fn main() -> Result<(), ChelpError> {
 
             let ctx = ShellContext {
                 os: std::env::consts::OS.to_string(),
-                shell: std::env::var("SHELL").unwrap_or_else(|_| "pwsh".to_string()),
+                shell: std::env::var("SHELL")
+                    .unwrap_or_else(|_| if cfg!(windows) { "pwsh" } else { "sh" }.to_string()),
                 cwd: std::env::current_dir()?.to_string_lossy().to_string(),
             };
 
-            let resp = provider.resolve_intent(&prompt, &ctx, &[]).await?;
+            // Spec §5.3: attach the parsed flags of any tool the prompt names.
+            let schemas = SchemaStore::new(&get_db_path())
+                .map(|store| complete::schemas_for_prompt(&store, &prompt))
+                .unwrap_or_default();
 
-            match render_interactive_confirmation(&resp)? {
-                UserAction::Run(cmd) | UserAction::Edit(cmd) => {
-                    if let Some(path) = out_file {
-                        let _ = std::fs::write(path, cmd);
-                    } else {
-                        println!("{}", cmd);
-                    }
-                }
-                UserAction::Cancel => {}
+            let resp = provider.resolve_intent(&prompt, &ctx, &schemas).await?;
+
+            let (action, command) = match render_interactive_confirmation(&resp)? {
+                UserAction::Run(cmd) => ("run", cmd),
+                UserAction::Edit(cmd) => ("edit", cmd),
+                UserAction::Cancel => return Ok(()),
+            };
+
+            match out_file {
+                // Hooks read `action\ncommand`; the TUI itself never reaches them.
+                Some(path) => std::fs::write(path, format!("{}\n{}", action, command))?,
+                None => println!("{}", command),
             }
         }
+
         Commands::Login { port } => {
             let _ = chelp::auth::run_cli_login(port, 120, None).await?;
         }
+
         Commands::Init { shell } => {
-            let script = generate_hook_script(&shell)?;
-            println!("{}", script);
-        }
-        Commands::Recipe { action } => {
-            let cwd = std::env::current_dir()?;
-            match action {
-                RecipeCommands::List => {
-                    let list = chelp::recipes::load_recipes(Some(&cwd))?;
-                    if list.is_empty() {
-                        println!("No recipes found. Create one with 'chelp recipe add <name> --cmd <command> --desc <description>'");
-                    } else {
-                        println!("Available Runbook Recipes:");
-                        println!("{:-<60}", "");
-                        for r in list {
-                            let (safety, _) = r.resolved_safety();
-                            let safety_str = match safety {
-                                chelp::models::SafetyLevel::Safe => "SAFE",
-                                chelp::models::SafetyLevel::Caution => "CAUTION",
-                                chelp::models::SafetyLevel::Destructive => "HIGH RISK / DESTRUCTIVE",
-                            };
-                            println!("• {}", r.name);
-                            println!("  Command:     {}", r.command);
-                            println!("  Description: {}", r.description);
-                            if !r.tags.is_empty() {
-                                println!("  Tags:        {}", r.tags.join(", "));
-                            }
-                            println!("  Safety:      {}", safety_str);
-                            println!();
-                        }
-                    }
-                }
-                RecipeCommands::Add {
-                    name,
-                    cmd,
-                    desc,
-                    tag,
-                    global,
-                } => {
-                    let recipe = chelp::recipes::Recipe {
-                        name: name.clone(),
-                        command: cmd,
-                        description: desc,
-                        tags: tag,
-                        safety_level: None,
-                    };
-                    let saved_path = chelp::recipes::save_recipe(recipe, global, Some(&cwd))?;
-                    println!("✔ Saved recipe '{}' to {}", name, saved_path.display());
-                }
-                RecipeCommands::Run { name } => {
-                    if let Some(cmd) = chelp::recipes::run_recipe(&name, Some(&cwd))? {
-                        println!("{}", cmd);
-                    }
-                }
-                RecipeCommands::Remove { name, global } => {
-                    if chelp::recipes::remove_recipe(&name, global, Some(&cwd))? {
-                        println!("✔ Removed recipe '{}'", name);
-                    } else {
-                        println!("Recipe '{}' not found.", name);
-                    }
-                }
-            }
-        }
-        Commands::IndexRepo { path } => {
-            let store = SchemaStore::new(&get_db_path())?;
-            let target_path = std::path::Path::new(&path);
-            let count = chelp::repo_indexer::index_workspace(target_path, &store)?;
-            println!("✔ Indexed {} project targets/scripts into local store.", count);
+            println!("{}", generate_hook_script(&shell)?);
         }
     }
 

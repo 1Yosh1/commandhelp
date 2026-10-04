@@ -13,13 +13,14 @@ serde_json = "1.0"
 thiserror = "1.0"
 rusqlite = { version = "0.31", features = ["bundled"] }
 regex = "1.10"
-crossterm = "0.27"
+# use-dev-tty: poll the terminal via poll(2) instead of kqueue. On macOS a
+# freshly opened /dev/tty fd cannot be kqueue-registered (EINVAL), which broke
+# input whenever stdin was not a tty (zsh ZLE widgets, redirected stdin).
+crossterm = { version = "0.27", features = ["use-dev-tty"] }
 ratatui = "0.26"
 reqwest = { version = "0.12", features = ["json", "hickory-dns"] }
 interprocess = { version = "2.2", features = ["tokio"] }
-nucleo-matcher = "0.3"
 toml = "0.8"
-directories = "5.0"
 async-trait = "0.1"
 
 [dev-dependencies]

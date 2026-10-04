@@ -29,6 +29,12 @@ fn test_build_prompt_includes_context() {
 
 #[test]
 fn test_create_provider_from_config_pro() {
+    // Hermetic: stored credentials are read from $CHELP_HOME, so the assertion
+    // below does not depend on whatever is in the developer's real config.
+    let home = tempfile::tempdir().unwrap();
+    std::env::set_var("CHELP_HOME", home.path());
+    std::env::remove_var("CHELP_API_TOKEN");
+
     let cfg = chelp::config::AiConfig {
         provider: "pro".to_string(),
         model: None,
@@ -44,13 +50,14 @@ fn test_create_provider_from_config_pro() {
         api_key: None,
         endpoint: None,
     };
-    // If no CHELP_API_TOKEN env var and no stored credentials, it should return Err
-    std::env::remove_var("CHELP_API_TOKEN");
+    // With no token and an empty state dir, provider construction must fail
+    // with an actionable message rather than a broken client.
     let missing_provider = chelp::ai::create_provider_from_config(&missing_cfg);
-    // Either fails or falls back to stored credentials if present on disk
-    if std::env::var("CHELP_API_TOKEN").is_err() && chelp::auth::load_credentials().ok().flatten().is_none() {
-        assert!(missing_provider.is_err());
-    }
+    let err = match missing_provider {
+        Err(e) => e,
+        Ok(_) => panic!("missing Pro token must be an error"),
+    };
+    assert!(err.to_string().contains("chelp login"), "{}", err);
 }
 
 #[tokio::test]

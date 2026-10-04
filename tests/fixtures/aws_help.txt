@@ -1,0 +1,17 @@
+Usage: aws <command>
+
+Available Commands:
+  ec2         Manage EC2 instances
+  s3          S3 commands
+  iam         Manage IAM users and policies
+  sts         Obtain temporary credentials
+  lambda      Manage Lambda functions
+  logs        CloudWatch Logs
+  rds         Manage relational database services
+
+Options:
+  --debug                 Turn on debugging output
+  --endpoint-url URL      Override command's default URL
+  --region region         The region to use
+  --output format         Output format: json, text, table
+  --profile profile       Use a specific profile from your credential file

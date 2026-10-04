@@ -1,0 +1,23 @@
+Manage pods, containers and images.
+
+Usage:
+  podman [command]
+
+Available Commands:
+  run         Run a command in a new container
+  ps          List containers
+  images      List images
+  build       Build an image from a Containerfile
+  pull        Pull an image from a registry
+  push        Push an image to a registry
+  rmi         Remove one or more images
+  rm          Remove one or more containers
+  logs        Fetch the logs of a container
+  exec        Run a command in a running container
+
+Flags:
+  -h, --help            help for podman
+      --log-level level  Log level (trace, debug, info, warn, error, fatal)
+      --cgroup-manager manager  Cgroup manager to use (cgroupfs or systemd)
+
+Use "podman [command] --help" for more information about a command.

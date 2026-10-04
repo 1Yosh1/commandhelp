@@ -1,6 +1,5 @@
 // src/config.rs
 use crate::error::ChelpError;
-use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -38,32 +37,34 @@ impl Default for ChelpConfig {
     }
 }
 
-pub fn get_config_dir() -> PathBuf {
-    if let Some(proj_dirs) = ProjectDirs::from("dev", "chelp", "chelp") {
-        let dir = proj_dirs.config_dir();
-        let _ = fs::create_dir_all(dir);
-        dir.to_path_buf()
-    } else {
-        let dir = dirs_fallback();
-        let _ = fs::create_dir_all(&dir);
-        dir
-    }
-}
-
-fn dirs_fallback() -> PathBuf {
-    let home = std::env::var("USERPROFILE")
+fn home_dir() -> PathBuf {
+    let raw = std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
         .unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home).join(".chelp")
+    PathBuf::from(raw)
+}
+
+/// Single owner of every path chelp writes to: `$CHELP_HOME` when set (tests,
+/// sandboxes), otherwise `~/.chelp` (spec §2.3).
+pub fn get_config_dir() -> PathBuf {
+    let dir = match std::env::var("CHELP_HOME") {
+        Ok(custom) if !custom.trim().is_empty() => PathBuf::from(custom),
+        _ => home_dir().join(".chelp"),
+    };
+    let _ = fs::create_dir_all(&dir);
+    dir
 }
 
 pub fn get_config_path() -> PathBuf {
-    // Check ~/.chelp/config.toml first
-    let home_cfg = dirs_fallback().join("config.toml");
-    if home_cfg.exists() {
-        return home_cfg;
-    }
     get_config_dir().join("config.toml")
+}
+
+pub fn get_db_path() -> PathBuf {
+    get_config_dir().join("data.db")
+}
+
+pub fn get_log_path() -> PathBuf {
+    get_config_dir().join("chelp.log")
 }
 
 pub fn load_config() -> Result<ChelpConfig, ChelpError> {
@@ -79,7 +80,6 @@ pub fn load_config() -> Result<ChelpConfig, ChelpError> {
         if let Ok(key) = std::env::var("GEMINI_API_KEY") {
             config.ai.provider = "gemini".to_string();
             config.ai.api_key = Some(key);
-            config.ai.model = Some("gemini-2.5-flash".to_string());
         } else if let Ok(key) = std::env::var("OPENAI_API_KEY") {
             config.ai.provider = "openai".to_string();
             config.ai.api_key = Some(key);

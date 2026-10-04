@@ -1,0 +1,23 @@
+The next generation Python tooling.
+
+Usage: poetry [options] <command>
+
+Commands:
+  add           Add a new dependency to pyproject.toml
+  remove        Remove a dependency from pyproject.toml
+  install       Install the project dependencies
+  lock          Lock the project dependencies
+  run           Run a command within the project environment
+  shell         Open a shell within the virtual environment
+  build         Build the project into a distributable package
+  publish       Publish the project to a PyPI-compatible repository
+  check         Validate pyproject.toml and poetry.lock
+  env           Display or manipulate the project virtual environment
+
+Options:
+  -C, --directory DIRECTORY  Working directory for the Poetry command
+  -q, --quiet                Do not output any message
+  -v, --verbose              Increase the verbosity of messages
+  --ansi / --no-ansi         Force (or disable) ANSI output
+  -V, --version               Display the Poetry version
+  -h, --help                   Show help and exit

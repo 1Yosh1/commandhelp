@@ -1,0 +1,70 @@
+Usage: brew install [options] formula|cask [...]
+
+Install a formula or cask. Additional options specific to a formula may be
+appended to the command.
+
+Unless $HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK is set, brew upgrade or brew
+reinstall will be run for outdated dependents and dependents with broken
+linkage, respectively.
+
+Unless $HOMEBREW_NO_INSTALL_CLEANUP is set, brew cleanup will then be run
+for the installed formulae and casks or, every 30 days, for all packages.
+
+Unless $HOMEBREW_NO_INSTALL_UPGRADE is set, brew install formula will
+upgrade formula if it is already installed but outdated.
+
+  -d, --debug                      If brewing fails, open an interactive
+                                   debugging session with access to IRB or a
+                                   shell inside the temporary build directory.
+      --display-times              Print install times for each package at the
+                                   end of the run. Enabled by default if
+                                   $HOMEBREW_DISPLAY_INSTALL_TIMES is set.
+  -f, --force                      Install formulae without checking for
+                                   previously installed keg-only or non-migrated
+                                   versions. When installing casks, overwrite
+                                   existing files (binaries and symlinks are
+                                   excluded, unless originally from the same
+                                   cask).
+  -v, --verbose                    Print the verification and post-install
+                                   steps.
+  -n, --dry-run                    Show what would be installed, but do not
+                                   actually install anything.
+  -y, --no-ask, --yes              Do not ask for confirmation before
+                                   downloading and installing. Ask mode is the
+                                   default. Enabled by default if
+                                   $HOMEBREW_NO_ASK is set.
+      --formula, --formulae        Treat all named arguments as formulae.
+      --ignore-dependencies        An unsupported Homebrew development option to
+                                   skip installing any dependencies of any kind.
+                                   If the dependencies are not already present,
+                                   the formula will have issues. If you're not
+                                   developing Homebrew, consider adjusting your
+                                   PATH rather than using this option.
+      --only-dependencies          Install the dependencies with specified
+                                   options but do not install the formula
+                                   itself.
+      --cc                         Attempt to compile using the specified
+                                   compiler, which should be the name of the
+                                   compiler's executable, e.g. gcc-9 for GCC
+                                   9. In order to use LLVM's clang, specify
+                                   llvm_clang. To use the Apple-provided
+                                   clang, specify clang. This option will only
+                                   accept compilers that are provided by
+                                   Homebrew or bundled with macOS. Please do not
+                                   file issues if you encounter errors while
+                                   using this option.
+  -s, --build-from-source          Compile formula from source even if a
+                                   bottle is provided. Dependencies will still
+                                   be installed from bottles if they are
+                                   available.
+      --force-bottle               Install from a bottle if it exists for the
+                                   current or newest version of macOS, even if
+                                   it would not normally be used for
+                                   installation.
+      --include-test               Install testing dependencies required to run
+                                   brew test formula.
+      --HEAD                       If formula defines it, install the HEAD
+                                   version, aka. main, trunk, unstable, master.
+      --fetch-HEAD                 Fetch the upstream repository to detect if
+                                   the HEAD installation of the formula is
+                                   outdated. Otherwise, the repository's HEAD

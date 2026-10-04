@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct CliFlag {
@@ -27,6 +28,18 @@ pub enum SafetyLevel {
     Safe,
     Caution,
     Destructive,
+}
+
+/// Single owner of the label shown for a safety level (modal, CLI output, logs).
+impl fmt::Display for SafetyLevel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let label = match self {
+            SafetyLevel::Safe => "SAFE",
+            SafetyLevel::Caution => "CAUTION",
+            SafetyLevel::Destructive => "DESTRUCTIVE",
+        };
+        f.write_str(label)
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]

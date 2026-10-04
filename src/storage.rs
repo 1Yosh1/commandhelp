@@ -1,6 +1,6 @@
 // src/storage.rs
 use crate::error::ChelpError;
-use crate::models::{CliCommandSchema, CliFlag};
+use crate::models::CliCommandSchema;
 use rusqlite::{params, Connection};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -47,12 +47,15 @@ impl SchemaStore {
         Ok(())
     }
 
-    pub fn get_schema(&self, binary: &str, subcommands: &[String]) -> Result<Option<CliCommandSchema>, ChelpError> {
+    pub fn get_schema(
+        &self,
+        binary: &str,
+        subcommands: &[String],
+    ) -> Result<Option<CliCommandSchema>, ChelpError> {
         let subcmd_str = subcommands.join(" ");
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare(
-            "SELECT schema_json FROM cli_schemas WHERE binary = ?1 AND subcommand_path = ?2",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT schema_json FROM cli_schemas WHERE binary = ?1 AND subcommand_path = ?2")?;
         let mut rows = stmt.query(params![binary, subcmd_str])?;
 
         if let Some(row) = rows.next()? {
@@ -64,20 +67,19 @@ impl SchemaStore {
         }
     }
 
-    pub fn match_flags(&self, binary: &str, subcommands: &[String], prefix: &str) -> Result<Vec<CliFlag>, ChelpError> {
-        if let Some(schema) = self.get_schema(binary, subcommands)? {
-            let prefix_lower = prefix.to_lowercase();
-            let matches = schema
-                .flags
-                .into_iter()
-                .filter(|f| {
-                    f.long.as_ref().map_or(false, |l| l.to_lowercase().starts_with(&prefix_lower))
-                        || f.short.as_ref().map_or(false, |s| s.to_lowercase().starts_with(&prefix_lower))
-                })
-                .collect();
-            Ok(matches)
-        } else {
-            Ok(vec![])
+    /// Deepest schema available along a subcommand path: `["container", "ls"]`
+    /// falls back to `["container"]` and then to the binary root, so a tree that
+    /// is still being indexed can answer with what it already knows.
+    pub fn get_best_schema(
+        &self,
+        binary: &str,
+        subcommands: &[String],
+    ) -> Result<Option<CliCommandSchema>, ChelpError> {
+        for depth in (0..=subcommands.len()).rev() {
+            if let Some(schema) = self.get_schema(binary, &subcommands[..depth])? {
+                return Ok(Some(schema));
+            }
         }
+        Ok(None)
     }
 }

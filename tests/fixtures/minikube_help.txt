@@ -1,0 +1,22 @@
+Minikube is a tool for running Kubernetes locally.
+
+Usage:
+  minikube [command]
+
+Available Commands:
+  start       Start a local Kubernetes cluster
+  stop        Stop a running local Kubernetes cluster
+  delete      Delete a local Kubernetes cluster
+  status      Get the status of a local Kubernetes cluster
+  tunnel      Expose LoadBalancer services to localhost
+  addons      Modify minikube addons
+  dashboard  Access the Kubernetes dashboard
+  ssh         Log into or run a command on the minikube VM
+  version     Print the version of minikube
+
+Flags:
+  -h, --help      help for minikube
+  -p, --profile   Profile name to use
+      --logtostderr   log to standard error instead of files
+
+Use "minikube [command] --help" for more information about a command.

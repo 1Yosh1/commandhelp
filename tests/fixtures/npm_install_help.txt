@@ -1,0 +1,70 @@
+Install a package
+
+Usage:
+npm install [<package-spec> ...]
+
+Options:
+[-S|--save|--no-save|--save-prod|--save-dev|--save-optional|--save-peer|--save-bundle]
+[-E|--save-exact] [-g|--global]
+[--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+[--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+[--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+[--strict-peer-deps] [--prefer-dedupe] [--no-package-lock] [--package-lock-only]
+[--foreground-scripts] [--ignore-scripts] [--allow-directory <all|none|root>]
+[--allow-file <all|none|root>] [--allow-git <all|none|root>]
+[--allow-remote <all|none|root>]
+[--allow-scripts <package-list> [--allow-scripts <package-list> ...]]
+[--strict-allow-scripts] [--dangerously-allow-all-scripts] [--no-audit]
+[--before <date>] [--min-release-age <days>]
+[--min-release-age-exclude <pkg|glob> [--min-release-age-exclude <pkg|glob> ...]]
+[--no-bin-links] [--no-fund] [--dry-run] [--cpu <cpu>] [--os <os>]
+[--libc <libc>]
+[-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+[--workspaces] [--include-workspace-root] [--install-links]
+
+  -S|--save
+    Save installed packages to a `package.json` file as dependencies.
+
+  -E|--save-exact
+    Dependencies saved to package.json will be configured with an exact
+
+  -g|--global
+    Operates in "global" mode, so that packages are installed into the
+
+  --install-strategy
+    Sets the strategy for installing packages in node_modules.
+
+  --legacy-bundling
+    Instead of hoisting package installs in `node_modules`, install packages
+
+  --global-style
+    Only install direct dependencies in the top level `node_modules`,
+
+  --omit
+    Dependency types to omit from the installation tree on disk.
+
+  --include
+    Option that allows for defining which types of dependencies to install.
+
+  --strict-peer-deps
+    If set to `true`, and `--legacy-peer-deps` is not set, then _any_
+
+  --prefer-dedupe
+    Prefer to deduplicate packages if possible, rather than
+
+  --package-lock
+    If set to false, then ignore `package-lock.json` files when installing.
+
+  --package-lock-only
+    If set to true, the current operation will only use the `package-lock.json`,
+
+  --foreground-scripts
+    Run all build scripts (ie, `preinstall`, `install`, and
+
+  --ignore-scripts
+    If true, npm does not run scripts specified in package.json files.
+
+  --allow-directory
+    Limits the ability for npm to install dependencies from directories.
+
+  --allow-file

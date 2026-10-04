@@ -1,0 +1,21 @@
+Go is a tool for managing Go source code.
+
+Usage:
+  go <command> [arguments]
+
+Commands:
+  build       compile packages and dependencies
+  test        run tests
+  run         compile and run Go program
+  fmt         run gofmt on package sources
+  get         add or update packages and dependencies
+  mod         module maintenance
+  vet         report likely mistakes in packages
+  generate    generate Go files by processing source
+  tool        run the named go tool
+  version     print Go version
+
+Additional help topics:
+  help        get help about a topic
+
+Use "go help [topic]" for more information about a topic.

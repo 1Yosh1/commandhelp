@@ -1,6 +1,41 @@
 use crate::error::ChelpError;
 use crate::models::{CliCommandSchema, CliFlag};
 use regex::Regex;
+use std::sync::OnceLock;
+
+/// Switches that only appear bracketed inside usage/syntax blocks rather than
+/// in an options list: `usage: git [-v | --version] [-C <path>]`, PowerShell's
+/// `Get-ChildItem [[-Path] <string>] [-Filter <string>]`.
+///
+/// Returns `(name, takes_value)` for every dash-prefixed token in the bracket.
+fn bracketed_switches(line: &str) -> Vec<(String, bool)> {
+    static SPLIT: OnceLock<Regex> = OnceLock::new();
+    let split = SPLIT.get_or_init(|| Regex::new(r"[|,\s]+").unwrap());
+
+    let mut found = Vec::new();
+    for group in line.split('[').skip(1) {
+        let inner = &group[..group.find(']').unwrap_or(group.len())];
+        if inner.is_empty() {
+            continue;
+        }
+        let takes_value = inner.contains('<') || inner.contains('=');
+        for token in split.split(inner) {
+            let token = token.trim();
+            let mut name = token.trim_end_matches(',');
+            if let Some((flag, _)) = name.split_once('=') {
+                name = flag;
+            }
+            if name.len() < 2 || !name.starts_with('-') {
+                continue;
+            }
+            if !name[1..].starts_with(|c: char| c.is_ascii_alphanumeric()) {
+                continue;
+            }
+            found.push((name.to_string(), takes_value));
+        }
+    }
+    found
+}
 
 pub fn parse_help_output(
     binary: &str,
@@ -24,6 +59,36 @@ pub fn parse_help_output(
         let trimmed = line.trim();
         if trimmed.is_empty() {
             continue;
+        }
+
+        // Switches that only appear bracketed in usage/syntax blocks: the
+        // `usage:` line itself (git, curl, terraform) and PowerShell's Get-Help
+        // SYNTAX blocks (spec §4.3).
+        for (name, takes_value) in bracketed_switches(trimmed) {
+            let known = flags.iter().any(|f: &CliFlag| {
+                f.long.as_deref() == Some(name.as_str())
+                    || f.short.as_deref() == Some(name.as_str())
+            });
+            if known {
+                continue;
+            }
+            if name.starts_with("--") {
+                flags.push(CliFlag {
+                    short: None,
+                    long: Some(name),
+                    takes_value,
+                    value_hint: None,
+                    description: String::new(),
+                });
+            } else {
+                flags.push(CliFlag {
+                    short: Some(name),
+                    long: None,
+                    takes_value,
+                    value_hint: None,
+                    description: String::new(),
+                });
+            }
         }
 
         let lower = trimmed.to_lowercase();
@@ -52,9 +117,14 @@ pub fn parse_help_output(
         if trimmed.starts_with('-') {
             let split_pattern = Regex::new(r"\s{2,}").unwrap();
             let parts: Vec<&str> = split_pattern.splitn(trimmed, 2).collect();
-            if parts.len() >= 2 {
+            // A flag line with no trailing description still yields a flag
+            // (`-cp <path>` in java, openssl's option lists).
+            {
                 let flags_part = parts[0];
-                let desc = parts[1].trim().to_string();
+                let desc = parts
+                    .get(1)
+                    .map(|d| d.trim().to_string())
+                    .unwrap_or_default();
 
                 let mut short: Option<String> = None;
                 let mut longs: Vec<String> = Vec::new();

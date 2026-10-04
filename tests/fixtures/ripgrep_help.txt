@@ -1,0 +1,29 @@
+ripgrep 14.1.1
+
+Usage: rg [OPTIONS] PATTERN [PATH ...]
+  rg [OPTIONS] -e PATTERN [PATH ...]
+  rg [OPTIONS] [-f PATTERNFILE] [PATH ...]
+
+Search for PATTERN in files in PATH (or the current directory).
+
+FLAGS:
+  -i, --ignore-case       Case insensitive search
+  -v, --invert-match      Invert matching
+  -w, --word-regexp       Only show matches surrounded by word boundaries
+  -n, --line-number       Show line numbers
+  -l, --files-with-matches Only print paths with at least one match
+  -c, --count             Show count of matching lines per file
+  -r, --replace REPLACEMENT Replace matches with the given text
+  -U, --multiline         Search across lines
+  -z, --search-zip        Search compressed files
+
+OPTIONS:
+  -t, --type TYPE         Only search files matching TYPE
+  -g, --glob GLOB         Include or exclude files matching GLOB
+  -m, --max-count NUM     Limit the number of matching lines per file
+      --max-depth NUM     Limit descent to NUM directories
+  -j, --threads NUM       Number of search threads
+
+Other options:
+  -h, --help              Print help
+  -V, --version           Print version

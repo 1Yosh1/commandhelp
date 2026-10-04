@@ -1,0 +1,15 @@
+The uncompromising code formatter.
+
+Usage: black [OPTIONS] [SRC]...
+
+Options:
+  -l, --line-length INTEGER  How many characters per line [default: 88]
+  -t, --target-version [py37]  Target Python version for code syntax [default: py33]
+  -S, --skip-string-normalization Don't normalize string quotes or prefixes
+  -c, --check               Don't write back, only check
+  -q, --quiet               Don't emit progress messages
+  -v, --verbose             Emit debugging information
+  --diff                    Don't write, output diffs instead
+  --color                   Show colored diff
+  -r, --line-ranges LINE_RANGE  When reformatting, limit to these line ranges
+  -h, --help                Show this message and exit

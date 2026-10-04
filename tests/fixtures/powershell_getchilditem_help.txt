@@ -1,0 +1,23 @@
+NAME
+    Get-ChildItem
+
+SYNTAX
+    Get-ChildItem [[-Path] <string>] [-Filter <string>] [-LiteralPath <string>]
+    [-Depth <int32>] [-Force] [-Recurse] [-Name] [<CommonParameters>]
+
+    Get-ChildItem [[-Path] <string>] [-Filter <string>] [-LiteralPath <string>]
+    [-Include <string[]>] [-Exclude <string[]>] [-Recurse] [-Depth <int32>]
+    [-Force] [-Name] [<CommonParameters>]
+
+DESCRIPTION
+    Gets the items and child items in one or more specified locations.
+
+PARAMETERS
+    -Path <string>
+        Specifies a path to one or more locations.
+
+    -Force
+        Allows the cmdlet to get items that otherwise cannot be accessed.
+
+    -Recurse <bool>
+        Gets all items in specified locations and child items.

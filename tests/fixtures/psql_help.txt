@@ -1,0 +1,19 @@
+psql is the PostgreSQL interactive terminal.
+
+Usage:
+  psql [OPTION]... [DBNAME [USERNAME]]
+
+General options:
+  -c, --command=COMMAND    run a single command and exit
+  -d, --dbname=DBNAME      database name to connect to
+  -f, --file=FILENAME      execute commands from a file and exit
+  -l, --list               list available databases and exit
+  -v, --set=NAME=VALUE     set psql variable NAME to VALUE
+  -x, --expanded           turn on expanded table output
+  -q, --quiet              run quietly (no welcome message or prompts)
+  -h, --host=HOSTNAME      database server host or socket directory
+
+Input and output options:
+  -a, --echo-all           echo all input from script
+  -e, --echo-echo          echo commands sent to server
+  -n, --no-readline        disable readline history and command editing

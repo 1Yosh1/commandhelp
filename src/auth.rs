@@ -41,6 +41,10 @@ pub fn save_credentials(creds: &UserCredentials) -> Result<PathBuf, ChelpError> 
 }
 
 pub fn open_browser(url: &str) {
+    // Tests (and scripted logins) opt out so nothing pops a browser window.
+    if std::env::var("CHELP_NO_BROWSER").is_ok() {
+        return;
+    }
     #[cfg(target_os = "windows")]
     {
         let _ = std::process::Command::new("rundll32")

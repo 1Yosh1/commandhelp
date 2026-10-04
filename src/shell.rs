@@ -1,54 +1,27 @@
 // src/shell.rs
+//
+// Every hook talks to the CLI with the same two conventions:
+//
+//   * `chelp query <buffer> --out-file <tmp>` — the interactive modal draws on
+//     the terminal while the *result* goes to the file as `run\n<command>` or
+//     `edit\n<command>` (empty when cancelled). Nothing of the TUI is ever
+//     captured back into the command line.
+//   * `chelp complete -- <buffer>` — stdout is a plain list of completed lines,
+//     best first; the hook inserts the first one that extends the buffer.
+
 use crate::error::ChelpError;
+
+const PSH_HOOK: &str = include_str!("hooks/hook.ps1");
+const ZSH_HOOK: &str = include_str!("hooks/hook.zsh");
+const BASH_HOOK: &str = include_str!("hooks/hook.bash");
+const FISH_HOOK: &str = include_str!("hooks/hook.fish");
 
 pub fn generate_hook_script(shell: &str) -> Result<String, ChelpError> {
     match shell.to_lowercase().as_str() {
-        "pwsh" | "powershell" => Ok(r#"
-# CommandHelp PowerShell Hook
-Set-PSReadLineKeyHandler -Chord 'Ctrl+ ' -ScriptBlock {
-    $line = $null
-    $cursor = $null
-    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-    $tmp = New-TemporaryFile
-    chelp query "$line" --out-file $tmp.FullName
-    $result = Get-Content -Path $tmp.FullName -Raw
-    Remove-Item -Path $tmp.FullName -ErrorAction SilentlyContinue
-    if ($result) {
-        $result = $result.Trim()
-        if ($result) {
-            [Microsoft.PowerShell.PSConsoleReadLine]::RevertLine()
-            [Microsoft.PowerShell.PSConsoleReadLine]::Insert($result)
-        }
-    }
-}
-"#.trim().to_string()),
-
-        "zsh" => Ok(r#"
-# CommandHelp Zsh Hook
-chelp-query() {
-    local cmd=$(chelp query "$BUFFER")
-    if [[ -n "$cmd" ]]; then
-        BUFFER="$cmd"
-        CURSOR=${#BUFFER}
-    fi
-    zle redisplay
-}
-zle -N chelp-query
-bindkey '^ ' chelp-query
-"#.trim().to_string()),
-
-        "bash" => Ok(r#"
-# CommandHelp Bash Hook
-_chelp_query() {
-    local cmd=$(chelp query "$READLINE_LINE")
-    if [[ -n "$cmd" ]]; then
-        READLINE_LINE="$cmd"
-        READLINE_POINT=${#READLINE_LINE}
-    fi
-}
-bind -x '"\C-@": _chelp_query'
-"#.trim().to_string()),
-
-        _ => Err(ChelpError::Config(format!("Unsupported shell: {}", shell))),
+        "pwsh" | "powershell" => Ok(PSH_HOOK.trim_end().to_string()),
+        "zsh" => Ok(ZSH_HOOK.trim_end().to_string()),
+        "bash" => Ok(BASH_HOOK.trim_end().to_string()),
+        "fish" => Ok(FISH_HOOK.trim_end().to_string()),
+        other => Err(ChelpError::Config(format!("Unsupported shell: {}", other))),
     }
 }

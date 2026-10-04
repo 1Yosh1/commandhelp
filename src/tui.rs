@@ -14,7 +14,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Wrap},
     Terminal,
 };
-use std::io::stdout;
+use std::io::IsTerminal;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum UserAction {
@@ -23,12 +23,31 @@ pub enum UserAction {
     Cancel,
 }
 
-pub fn handle_key_event(key: crossterm::event::KeyEvent, command: &str) -> Option<UserAction> {
+/// Pure key -> decision mapping so tests can drive it without a terminal.
+///
+/// Destructive commands are gated (spec §5.4): the first `Enter` only arms the
+/// confirmation and returns `None` (the caller redraws with the prompt), `y`
+/// then executes. `Tab`/`e` always routes back to the prompt for review.
+pub fn handle_key_event(
+    key: crossterm::event::KeyEvent,
+    command: &str,
+    destructive: bool,
+    armed: &mut bool,
+) -> Option<UserAction> {
     match key.code {
+        KeyCode::Enter if destructive && !*armed => {
+            *armed = true;
+            None
+        }
         KeyCode::Enter => Some(UserAction::Run(command.to_string())),
+        KeyCode::Char('y') | KeyCode::Char('Y') if destructive && *armed => {
+            Some(UserAction::Run(command.to_string()))
+        }
         KeyCode::Tab | KeyCode::Char('e') => Some(UserAction::Edit(command.to_string())),
         KeyCode::Esc | KeyCode::Char('q') => Some(UserAction::Cancel),
-        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(UserAction::Cancel),
+        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            Some(UserAction::Cancel)
+        }
         _ => None,
     }
 }
@@ -36,6 +55,7 @@ pub fn handle_key_event(key: crossterm::event::KeyEvent, command: &str) -> Optio
 pub fn draw_confirmation_ui<B: ratatui::backend::Backend>(
     terminal: &mut Terminal<B>,
     resp: &AiCommandResponse,
+    armed: bool,
 ) -> Result<(), ChelpError> {
     terminal.draw(|f| {
         let chunks = Layout::default()
@@ -48,30 +68,29 @@ pub fn draw_confirmation_ui<B: ratatui::backend::Backend>(
             ])
             .split(f.size());
 
-        // 1. Command Block
         let cmd_p = Paragraph::new(resp.command.clone())
             .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
             .block(Block::default().borders(Borders::ALL).title(" Suggested Command "));
         f.render_widget(cmd_p, chunks[0]);
 
-        // 2. Explanation Block
         let exp_p = Paragraph::new(resp.explanation.clone())
             .style(Style::default().fg(Color::White))
             .wrap(Wrap { trim: true })
             .block(Block::default().borders(Borders::ALL).title(" Explanation "));
         f.render_widget(exp_p, chunks[1]);
 
-        // 3. Safety Block
+        let destructive = resp.safety_level == SafetyLevel::Destructive;
         let (safety_text, safety_style) = match resp.safety_level {
             SafetyLevel::Safe => ("● SAFE (Read-Only)", Style::default().fg(Color::Green)),
             SafetyLevel::Caution => ("● CAUTION (State Change)", Style::default().fg(Color::Yellow)),
-            SafetyLevel::Destructive => ("▲ HIGH RISK / DESTRUCTIVE ACTION", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            SafetyLevel::Destructive => (
+                "▲ HIGH RISK / DESTRUCTIVE ACTION",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
         };
-
-        let warning_line = if let Some(w) = &resp.destructive_warning {
-            format!(" - {}", w)
-        } else {
-            String::new()
+        let warning_line = match &resp.destructive_warning {
+            Some(w) => format!(" - {}", w),
+            None => String::new(),
         };
 
         let safety_p = Paragraph::new(Line::from(vec![
@@ -81,15 +100,36 @@ pub fn draw_confirmation_ui<B: ratatui::backend::Backend>(
         .block(Block::default().borders(Borders::ALL).title(" Safety Assessment "));
         f.render_widget(safety_p, chunks[2]);
 
-        // 4. Controls Block
-        let controls = Line::from(vec![
-            Span::styled("[Enter] ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw("Run in shell   "),
-            Span::styled("[Tab / e] ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw("Edit on prompt   "),
-            Span::styled("[Esc] ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::raw("Cancel"),
-        ]);
+        let controls = if destructive {
+            if armed {
+                Line::from(vec![
+                    Span::styled("[y] ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("Confirm   "),
+                    Span::styled("[Tab / e] ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("Edit on prompt   "),
+                    Span::styled("[Esc] ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("Cancel"),
+                ])
+            } else {
+                Line::from(vec![
+                    Span::styled("[Enter] ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("Confirm   "),
+                    Span::styled("[Tab / e] ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("Edit on prompt   "),
+                    Span::styled("[Esc] ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::raw("Cancel"),
+                ])
+            }
+        } else {
+            Line::from(vec![
+                Span::styled("[Enter] ", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw("Run in shell   "),
+                Span::styled("[Tab / e] ", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw("Edit on prompt   "),
+                Span::styled("[Esc] ", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw("Cancel"),
+            ])
+        };
         let ctrl_p = Paragraph::new(controls)
             .block(Block::default().borders(Borders::ALL).title(" Actions "));
         f.render_widget(ctrl_p, chunks[3]);
@@ -105,29 +145,48 @@ pub fn render_interactive_confirmation_with<B: ratatui::backend::Backend, F>(
 where
     F: FnMut() -> Result<Event, ChelpError>,
 {
+    let mut armed = false;
     loop {
-        draw_confirmation_ui(terminal, resp)?;
+        draw_confirmation_ui(terminal, resp, armed)?;
         let evt = next_event()?;
         if let Event::Key(key) = evt {
-            if let Some(action) = handle_key_event(key, &resp.command) {
+            let destructive = resp.safety_level == SafetyLevel::Destructive;
+            if let Some(action) = handle_key_event(key, &resp.command, destructive, &mut armed) {
                 return Ok(action);
             }
         }
     }
 }
 
+/// Renders the confirmation modal. The drawing surface is stdout; key input
+/// comes from the controlling terminal — crossterm falls back to `/dev/tty`
+/// when stdin is not a terminal, which is exactly the case inside a zsh ZLE
+/// widget (children get a stdin that is not the tty). Without a drawable or
+/// readable terminal there is nothing to show, so the command is handed back
+/// as an edit instead of failing.
 pub fn render_interactive_confirmation(resp: &AiCommandResponse) -> Result<UserAction, ChelpError> {
-    enable_raw_mode()?;
-    let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    if !std::io::stdout().is_terminal() {
+        return Ok(UserAction::Edit(resp.command.clone()));
+    }
+    if enable_raw_mode().is_err()
+        || execute!(std::io::stdout(), EnterAlternateScreen).is_err()
+    {
+        let _ = disable_raw_mode();
+        return Ok(UserAction::Edit(resp.command.clone()));
+    }
 
-    let action = render_interactive_confirmation_with(
-        &mut terminal,
-        || event::read().map_err(ChelpError::from),
-        resp,
-    );
+    let mut terminal = match Terminal::new(CrosstermBackend::new(std::io::stdout())) {
+        Ok(terminal) => terminal,
+        Err(e) => {
+            let _ = disable_raw_mode();
+            let _ = execute!(std::io::stdout(), LeaveAlternateScreen);
+            return Err(ChelpError::from(e));
+        }
+    };
+
+    let action = render_interactive_confirmation_with(&mut terminal, || {
+        event::read().map_err(ChelpError::from)
+    }, resp);
 
     let _ = disable_raw_mode();
     let _ = execute!(terminal.backend_mut(), LeaveAlternateScreen);

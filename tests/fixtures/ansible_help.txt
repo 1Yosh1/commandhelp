@@ -1,0 +1,13 @@
+usage: ansible <host-pattern> [options]
+
+Options:
+  -m NAME, --module-name NAME       module to execute (default=command)
+  -a ARGS, --args ARGS              the module arguments
+  -i INVENTORY, --inventory-file INVENTORY
+  -u USER, --user USER              remote user to use (default=root)
+  -k, --ask-pass                    ask for password
+  -K, --ask-become-pass             ask for privilege escalation password
+  -C, --check                       don't make any changes
+  -f FORKS, --forks FORKS           specify number of parallel processes
+  -l LABEL, --limit LABEL           limit selected hosts to an additional pattern
+  -v, --verbose                     verbose mode (-vvv for more, -vvvv to enable connection debugging)
