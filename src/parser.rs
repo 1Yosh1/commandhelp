@@ -52,6 +52,10 @@ pub fn parse_help_output(
         r"^\s{2,}([a-zA-Z0-9_-]+):?\s{2,}(.*)$"
     ).unwrap();
 
+    // Splits "-f, --flag   Description" on runs of two or more spaces. Built
+    // once per parse instead of recompiled for every flag line.
+    let split_pattern = Regex::new(r"\s{2,}").unwrap();
+
     let mut in_commands_section = false;
     let mut in_options_section = false;
 
@@ -115,7 +119,6 @@ pub fn parse_help_output(
 
         // Parse flags if line starts with '-'
         if trimmed.starts_with('-') {
-            let split_pattern = Regex::new(r"\s{2,}").unwrap();
             let parts: Vec<&str> = split_pattern.splitn(trimmed, 2).collect();
             // A flag line with no trailing description still yields a flag
             // (`-cp <path>` in java, openssl's option lists).
