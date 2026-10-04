@@ -7,7 +7,8 @@
 
 ## ✨ Features
 
-- ⚡ **Zero-Latency Autocomplete (<1ms)**: Caches parsed CLI flags and subcommands in SQLite and in-memory Tries. Never slows down your typing.
+- ⚡ **Sub-15ms Autocomplete**: Caches parsed CLI flags and subcommands in SQLite and serves completions from a warm daemon inside a 15ms budget — slow machines degrade gracefully instead of stuttering your typing.
+- 👻 **Ghost Text**: Start a command and a dim suggestion appears after the cursor. Accept it with **Tab** / **→** (zsh), **→** (bash ≥ 4), or ignore it.
 - 📖 **Universal & Dynamic**: Reads `--help`, `-h`, and `man` pages of **any** command on the fly. Works on niche tools and private in-house company CLIs without needing pre-written specs.
 - 🤖 **Bring Your Own Key (BYOK)**: First-class support for:
   - **Google Gemini** (`gemini-2.5-flash` - ultra-fast & free tier available)
@@ -15,8 +16,8 @@
   - **Anthropic Claude** (`claude-3-5-haiku`, `claude-3-5-sonnet`)
   - **Ollama** (100% Free & Local, completely offline, zero API keys required)
   - **OpenAI-Compatible Endpoints** (Groq, DeepSeek, OpenRouter, Mistral)
-- 🛡️ **Interactive Safety Guardrails**: Prevents accidental disaster. High-risk destructive commands (`rm -rf`, `DROP TABLE`, `mkfs`, force pushes) are highlighted in bold red and require explicit confirmation.
-- 💻 **Terminal & Shell Agnostic**: Works inside your favorite terminal (Windows Terminal, iTerm2, Alacritty, Ghostty, Kitty) with PowerShell, Zsh, and Bash.
+- 🛡️ **Interactive Safety Guardrails**: Prevents accidental disaster. High-risk destructive commands (`rm -rf`, `DROP TABLE`, `mkfs`, force pushes) are highlighted in bold red and require explicit confirmation — the first `Enter` only arms the prompt, `y` executes, `Tab`/`e` sends it back to your prompt for editing.
+- 💻 **Terminal & Shell Agnostic**: Works inside your favorite terminal (Windows Terminal, iTerm2, Alacritty, Ghostty, Kitty) with Zsh, Bash (≥ 4; macOS' stock bash 3.2 is left untouched), Fish, and PowerShell. Diagnostics land in `~/.chelp/chelp.log` instead of your prompt.
 
 ---
 
@@ -68,27 +69,39 @@ Ask what you want in plain English:
 chelp query "find all mp4 files larger than 50MB modified in the last 7 days"
 ```
 
-An interactive terminal card appears right beneath your prompt:
+An interactive modal takes over the terminal:
 
 ```text
-┌── CommandHelp AI ────────────────────────────────────────────────────────┐
-│ Command:  find . -type f -name "*.mp4" -size +50M -mtime -7              │
-│ Explain:  Finds all regular .mp4 files over 50MB modified within 7 days. │
-│ Safety:   ● SAFE (Read-only query)                                       │
-├──────────────────────────────────────────────────────────────────────────┤
-│ [Enter] Run    [Tab / e] Edit on Prompt    [Esc] Cancel                  │
-└──────────────────────────────────────────────────────────────────────────┘
+┌ Suggested Command ─────────────────────────────────────────┐
+│ find . -type f -name "*.mp4" -size +50M -mtime -7          │
+└────────────────────────────────────────────────────────────┘
+┌ Explanation ──────────────────────────────────────────────┐
+│ Finds all regular .mp4 files over 50MB modified in 7 days. │
+└───────────────────────────────────────────────────────────┘
+┌ Safety Assessment ────────────────────────────────────────┐
+│ ● SAFE (Read-Only)                                        │
+└───────────────────────────────────────────────────────────┘
+┌ Actions ──────────────────────────────────────────────────┐
+│ [Enter] Run in shell   [Tab / e] Edit on prompt   [Esc] Cancel │
+└───────────────────────────────────────────────────────────┘
 ```
 
-- Press **`[Enter]`** to execute the command directly.
-- Press **`[Tab]`** or **`[e]`** to place the command onto your shell prompt so you can review or modify flags before running.
+- Press **`[Enter]`** to choose the command; run directly with the shell hook (below) or capture the printed command from a plain `chelp query` invocation.
+- Press **`[Tab]`** or **`[e]`** to review or modify the command before running it.
 - Press **`[Esc]`** to cancel.
+- Destructive suggestions start with **`[Enter] Confirm`** — pressing it only arms the dialog, which then demands **`y`** to execute (`Tab`/`e` always backs out to your prompt).
 
-### 2. Inline Shell Shortcut
-In your shell, type your command intent and press:
-- **`[Ctrl + Space]`**
+### 2. Inline Ghost Text + Shell Shortcut
+Inside zsh or bash (≥ 4) with the hook installed:
 
-`chelp` intercepts the prompt, generates the command, and lets you execute or edit it immediately.
+- Start typing and `chelp` shows a **ghost-text** suggestion; press **`Tab`/`→`** to accept it (bash uses `→` — `Tab` stays with readline's filename completion).
+- Press **`[Ctrl + Space]`** to translate your current prompt line into a command.
+
+The modal draws on the terminal only — your typed buffer is never overwritten by rendering. When it resolves:
+
+- **`Run`** — the command executes in your shell (and lands in history)
+- **`Edit`** — the command is placed on your prompt for review
+- **`Cancel` (`Esc`)** — your original buffer is restored untouched
 
 ### 3. Change AI Providers Anytime
 Switch models or keys with a single command:
