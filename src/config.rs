@@ -8,6 +8,15 @@ use std::path::PathBuf;
 pub struct ChelpConfig {
     #[serde(default)]
     pub ai: AiConfig,
+    /// Path style for completions: "windows" (backslashes) or "posix" (forward slashes)
+    #[serde(default)]
+    pub path_style: Option<String>,
+    /// Whether local SQLite schema caching is enabled (default: true)
+    #[serde(default)]
+    pub cache_enabled: Option<bool>,
+    /// Strict zero-telemetry guarantee (default: true)
+    #[serde(default)]
+    pub no_telemetry: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -61,14 +70,18 @@ pub fn get_log_path() -> PathBuf {
 
 pub fn load_config() -> Result<ChelpConfig, ChelpError> {
     let path = get_config_path();
-    if path.exists() {
+    let mut config = if path.exists() {
         let content = fs::read_to_string(&path)?;
-        let config: ChelpConfig = toml::from_str(&content)
-            .map_err(|e| ChelpError::Config(format!("Failed to parse config: {}", e)))?;
-        Ok(config)
+        toml::from_str(&content)
+            .map_err(|e| ChelpError::Config(format!("Failed to parse config: {}", e)))?
     } else {
-        // Auto-detect from environment variables
-        let mut config = ChelpConfig::default();
+        ChelpConfig::default()
+    };
+
+    // Priority environment variable overrides (enterprise key injection & 1Password)
+    if let Ok(key) = std::env::var("CHELP_API_KEY") {
+        config.ai.api_key = Some(key);
+    } else if config.ai.api_key.is_none() {
         if let Ok(key) = std::env::var("GEMINI_API_KEY") {
             config.ai.provider = "gemini".to_string();
             config.ai.api_key = Some(key);
@@ -81,8 +94,15 @@ pub fn load_config() -> Result<ChelpConfig, ChelpError> {
             config.ai.api_key = Some(key);
             config.ai.model = Some("claude-3-5-haiku-20241022".to_string());
         }
-        Ok(config)
     }
+
+    if let Ok(ollama_host) = std::env::var("OLLAMA_HOST") {
+        if config.ai.provider == "ollama" {
+            config.ai.endpoint = Some(ollama_host);
+        }
+    }
+
+    Ok(config)
 }
 
 pub fn save_config(config: &ChelpConfig) -> Result<PathBuf, ChelpError> {

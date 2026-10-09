@@ -57,6 +57,27 @@ enum Commands {
     Init {
         shell: String,
     },
+    /// Manage local CLI schema cache
+    Cache {
+        #[command(subcommand)]
+        action: CacheAction,
+    },
+    /// 🛡️ Audit privacy, zero telemetry, and local data retention
+    Privacy,
+    /// 🔍 Parse and dump CLI command schema AST (for tool authors and debugging)
+    DumpAst {
+        binary: String,
+        #[arg(default_value = "")]
+        subcommand: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum CacheAction {
+    /// Clear all cached schemas from local database
+    Clear,
+    /// Show cache storage path and schema count
+    Info,
 }
 
 /// Socket name shared by client and daemon (`CHELP_SOCKET` overrides it so
@@ -164,6 +185,49 @@ async fn run() -> Result<(), ChelpError> {
 
         Commands::Init { shell } => {
             println!("{}", generate_hook_script(&shell)?);
+        }
+
+        Commands::Cache { action } => {
+            let store = SchemaStore::new(&get_db_path())?;
+            match action {
+                CacheAction::Clear => {
+                    let count = store.clear()?;
+                    println!("Cleared {} cached CLI schema(s) from {}.", count, get_db_path().display());
+                }
+                CacheAction::Info => {
+                    let count = store.count_schemas()?;
+                    println!("Cache path: {}", get_db_path().display());
+                    println!("Cached CLI schemas: {}", count);
+                }
+            }
+        }
+
+        Commands::Privacy => {
+            println!("🛡️  CommandHelp (chelp) Privacy & Data Retention Audit");
+            println!("------------------------------------------------------");
+            println!("• Telemetry: ZERO. chelp makes 0 outbound pings, tracking, or update checks.");
+            println!("• Offline Mode: 100% local when configured with Ollama (supports Unix socket & TCP).");
+            println!("• Local Storage: Only parsed CLI flag schemas from `--help` are stored (~/.chelp/data.db).");
+            println!("• Command History: NEVER logged, stored, or sent over network.");
+            println!("• Credentials: Supports CHELP_API_KEY environment variable (compatible with 1Password / Bitwarden CLI).");
+            println!("• Purge: Run `chelp cache clear` anytime to purge all local data.");
+        }
+
+        Commands::DumpAst { binary, subcommand } => {
+            let sub: Vec<String> = if subcommand.trim().is_empty() {
+                vec![]
+            } else {
+                subcommand.split_whitespace().map(String::from).collect()
+            };
+            match chelp::crawler::crawl_command_help(&binary, &sub) {
+                Ok(help_text) => {
+                    let schema = chelp::parser::parse_help_output(&binary, &sub, &help_text)?;
+                    println!("{}", serde_json::to_string_pretty(&schema).map_err(|e| ChelpError::Parser(e.to_string()))?);
+                }
+                Err(e) => {
+                    eprintln!("Failed to parse help for '{}': {}", binary, e);
+                }
+            }
         }
     }
 

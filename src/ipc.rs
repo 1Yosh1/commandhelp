@@ -51,7 +51,10 @@ fn to_socket_name(name: &str) -> Result<interprocess::local_socket::Name<'_>, Ch
 
 /// Spawns a detached `chelp daemon` (spec §2.2 auto-spawn, and `--detached`).
 pub fn spawn_daemon_detached() {
-    if std::env::var("CHELP_NO_AUTO_SPAWN").is_ok() {
+    // kill switch must also stop the lib-level auto-spawn path, not just hooks
+    if std::env::var("CHELP_NO_AUTO_SPAWN").is_ok()
+        || std::env::var("CHELP_DISABLE_DAEMON").as_deref() == Ok("1")
+    {
         return;
     }
     let Ok(exe) = std::env::current_exe() else {

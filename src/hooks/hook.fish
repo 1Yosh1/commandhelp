@@ -4,6 +4,10 @@
 # Tab / Right : accept the completion (falls back to the stock widget)
 
 # Warm the daemon so the first completion is served inside the 15ms budget.
+# Privacy kill switch: CHELP_DISABLE_DAEMON=1 degrades to a no-op hook.
+if test "$CHELP_DISABLE_DAEMON" = "1"
+    exit 0
+end
 command chelp daemon --detached >/dev/null 2>&1
 
 function __chelp_query

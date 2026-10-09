@@ -20,6 +20,13 @@ fn destructive_patterns() -> &'static [(Regex, &'static str)] {
             (r"(?i)\bkillall\b", "killall terminates every matching process without confirmation."),
             (r"(?i)\bkill\s+-9\b", "SIGKILL forces processes to terminate without saving state."),
             (r"(?i)\bStop-Process\b.*-Force", "Forces process termination without cleanup."),
+            (r"(?i)\bterraform\s+.*destroy\b", "Terraform destroy tears down cloud infrastructure."),
+            (r"(?i)\bkubectl\s+delete\s+(ns|namespace|all|pv|pvc)\b", "Kubernetes resource deletion destroys cluster infrastructure."),
+            (r"(?i)\bdocker\s+system\s+prune\b.*(-a|--all)", "Docker prune removes all unused containers, networks, and images."),
+            (r"(?i)\bconda\s+env\s+remove\b", "Conda environment removal permanently deletes your environment."),
+            (r"(?i)\bhelm\s+uninstall\b", "Helm uninstall removes release and deletes cluster components."),
+            (r"(?i)\baws\s+s3\s+rb\b.*--force", "Force-deleting S3 bucket destroys all objects inside."),
+            (r"(?i)\baz\s+group\s+delete\b", "Azure resource group deletion destroys all contained cloud resources."),
         ]
         .iter()
         .map(|(pattern, warning)| (Regex::new(pattern).unwrap(), *warning))

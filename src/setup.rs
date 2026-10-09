@@ -6,6 +6,31 @@ use crate::models::ShellContext;
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 
+/// Describe which profile file `setup_shell_profile` would edit, without touching it.
+fn describe_profile_target() -> Option<String> {
+    if cfg!(target_os = "windows") {
+        let home = std::env::var("USERPROFILE").ok()?;
+        let pwsh7 = PathBuf::from(&home).join("Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1");
+        let win = PathBuf::from(&home).join("Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1");
+        if pwsh7.parent().is_some_and(|p| p.exists()) {
+            Some(pwsh7.to_string_lossy().to_string())
+        } else {
+            Some(win.to_string_lossy().to_string())
+        }
+    } else {
+        let home = std::env::var("HOME").ok()?;
+        let zshrc = PathBuf::from(&home).join(".zshrc");
+        let bashrc = PathBuf::from(&home).join(".bashrc");
+        if zshrc.exists() {
+            Some(zshrc.to_string_lossy().to_string())
+        } else if bashrc.exists() {
+            Some(bashrc.to_string_lossy().to_string())
+        } else {
+            None
+        }
+    }
+}
+
 pub async fn run_setup() -> Result<(), ChelpError> {
     println!();
     println!("============================================================");
@@ -19,9 +44,32 @@ pub async fn run_setup() -> Result<(), ChelpError> {
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_else(|_| "chelp".to_string());
 
-    if let Err(e) = setup_shell_profile(&exe_path) {
-        println!("  [!] Could not automatically update profile: {}", e);
-        println!("      You can manually add the hook by running: chelp init <shell>");
+    // Never touch rc files without explicit consent (maintainer-trust requirement):
+    // print exactly what would be appended and require a y/n answer.
+    let stdin = io::stdin();
+    let mut consent_reader = stdin.lock();
+    let target = describe_profile_target();
+    let hook_line = if cfg!(target_os = "windows") {
+        format!("Invoke-Expression (& \"{}\" init pwsh)", exe_path)
+    } else {
+        format!("eval \"$(\"{}\" init zsh)\"\n# or: eval \"$(\"{}\" init bash)\"", exe_path, exe_path)
+    };
+    println!(
+        "  chelp wants to append this line to {}:",
+        target.as_deref().unwrap_or("your shell profile")
+    );
+    println!("    {}", hook_line);
+    print!("  Allow? [y/N]: ");
+    let _ = io::stdout().flush();
+    let mut answer = String::new();
+    let _ = consent_reader.read_line(&mut answer);
+    if answer.trim().eq_ignore_ascii_case("y") {
+        if let Err(e) = setup_shell_profile(&exe_path) {
+            println!("  [!] Could not automatically update profile: {}", e);
+            println!("      You can manually add the hook by running: chelp init <shell>");
+        }
+    } else {
+        println!("  ✔ Skipped profile edit. Run `chelp init <shell>` to print the hook manually.");
     }
 
     println!();
@@ -187,7 +235,10 @@ pub async fn run_config_wizard() -> Result<(), ChelpError> {
         }
     }
 
-    let config = ChelpConfig { ai: ai_config };
+    let config = ChelpConfig {
+        ai: ai_config,
+        ..Default::default()
+    };
     let saved_path = save_config(&config)?;
     println!("  ✔ Configuration saved to: {:?}", saved_path);
 

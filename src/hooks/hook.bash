@@ -11,6 +11,12 @@
 # of the way instead of half-working.
 if [ "${BASH_VERSINFO[0]}" -ge 4 ]; then
 
+# Privacy kill switch: CHELP_DISABLE_DAEMON=1 degrades to a silent no-op hook
+# (no daemon spawn, no completion calls) for audited/HIPAA workstations.
+if [ "${CHELP_DISABLE_DAEMON:-}" = "1" ]; then
+  return 0 2>/dev/null || exit 0
+fi
+
 # Warm the daemon so the first completion is served inside the 15ms budget.
 chelp daemon --detached >/dev/null 2>&1
 

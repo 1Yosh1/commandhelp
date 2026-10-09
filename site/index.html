@@ -344,7 +344,46 @@
             <h3>Run, edit, or cancel</h3>
             <p><kbd>Enter</kbd> executes (and lands in history), <kbd>Tab</kbd>/<kbd>e</kbd> puts it
               on your prompt, <kbd>Esc</kbd> restores your buffer. Destructive commands add a
-              <kbd>y</kbd> confirmation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ENTERPRISE, PRIVACY & ECONOMICS ================= -->
+    <section id="enterprise">
+      <div class="wrap">
+        <h2>Enterprise-grade privacy &amp; transparent economics</h2>
+        <p class="section-sub">Built for air-gapped environments, strict security reviews, and engineering teams that want AI power without paying $19/dev/mo seat taxes.</p>
+        <div class="grid">
+          <div class="card">
+            <div class="ico">🛡️</div>
+            <h3>Zero telemetry guarantee</h3>
+            <p>0 outbound tracking, 0 telemetry calls, 0 pings. In Ollama mode, packets never leave your machine (supports Unix sockets). Verify with <code class="inline">chelp privacy</code>.</p>
+          </div>
+          <div class="card">
+            <div class="ico">🔐</div>
+            <h3>Credential vault friendly</h3>
+            <p>Avoid plaintext configs in dotfiles. Inject keys via <code class="inline">CHELP_API_KEY</code> from 1Password or Bitwarden CLI. Seamless CI/CD and workstation deployment.</p>
+          </div>
+          <div class="card">
+            <div class="ico">💰</div>
+            <h3>$1.50/dev/month vs $19 Copilot</h3>
+            <p>BYOK with Gemini 2.5 Flash averages under $2/month for high-volume terminal power users. 10x cost reduction across your engineering organization.</p>
+          </div>
+          <div class="card">
+            <div class="ico">📁</div>
+            <h3>Schema-only caching (GDPR)</h3>
+            <p>SQLite caches parsed <code class="inline">--help</code> flags only — NEVER your typed commands or terminal history. Purge anytime with <code class="inline">chelp cache clear</code>.</p>
+          </div>
+          <div class="card">
+            <div class="ico">⚡</div>
+            <h3>AST &amp; heuristic guardrails</h3>
+            <p>Hard gates on destructive operations: <code class="inline">terraform destroy</code>, <code class="inline">kubectl delete ns</code>, <code class="inline">docker prune</code>, <code class="inline">rm -rf</code>, force pushes.</p>
+          </div>
+          <div class="card">
+            <div class="ico">🪟</div>
+            <h3>PowerShell &amp; Windows native</h3>
+            <p>Native cmdlets, configurable backslash formatting (<code class="inline">path_style = "windows"</code>), and out-of-the-box PSReadLine keybinding integration.</p>
           </div>
         </div>
       </div>

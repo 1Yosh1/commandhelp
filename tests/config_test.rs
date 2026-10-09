@@ -11,6 +11,7 @@ fn test_config_serialization() {
             api_key: Some("sk-test12345".to_string()),
             endpoint: Some("https://api.openai.com/v1".to_string()),
         },
+        ..Default::default()
     };
 
     let toml_str = toml::to_string(&config).unwrap();

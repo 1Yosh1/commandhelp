@@ -4,6 +4,9 @@
 # Tab / Right: accept the completion (falls back to the stock behaviour)
 
 # Warm the daemon so the first completion is served inside the 15ms budget.
+# Privacy kill switch: CHELP_DISABLE_DAEMON=1 degrades to a no-op hook (no spawn,
+# no completion calls) for audited/HIPAA workstations.
+if ($env:CHELP_DISABLE_DAEMON -eq "1") { return }
 chelp daemon --detached 2>$null
 
 function Read-ChelpResult {
@@ -29,7 +32,8 @@ function Get-ChelpSuggestion {
     return $null
 }
 
-Set-PSReadLineKeyHandler -Chord 'Ctrl+ ' -ScriptBlock {
+# Unbind conflicting default MenuComplete if present, then bind chelp query
+$chelpQueryBlock = {
     $line = $null
     $cursor = $null
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
@@ -48,6 +52,11 @@ Set-PSReadLineKeyHandler -Chord 'Ctrl+ ' -ScriptBlock {
         }
     }
 }
+
+try {
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+Space' -ScriptBlock $chelpQueryBlock -ErrorAction SilentlyContinue
+} catch {}
+Set-PSReadLineKeyHandler -Chord 'Ctrl+ ' -ScriptBlock $chelpQueryBlock
 
 Set-PSReadLineKeyHandler -Key RightArrow -ScriptBlock {
     $line = $null

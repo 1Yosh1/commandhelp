@@ -82,4 +82,20 @@ impl SchemaStore {
         }
         Ok(None)
     }
+
+    /// Clear all cached schemas (GDPR / privacy compliance & cache invalidation)
+    pub fn clear(&self) -> Result<usize, ChelpError> {
+        let conn = self.conn.lock().unwrap();
+        let deleted = conn.execute("DELETE FROM cli_schemas", [])?;
+        conn.execute("VACUUM", [])?;
+        Ok(deleted)
+    }
+
+    /// Count total cached schemas
+    pub fn count_schemas(&self) -> Result<usize, ChelpError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT COUNT(*) FROM cli_schemas")?;
+        let count: usize = stmt.query_row([], |row| row.get(0))?;
+        Ok(count)
+    }
 }

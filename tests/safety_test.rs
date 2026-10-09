@@ -13,6 +13,14 @@ fn test_destructive_patterns() {
         ("DROP DATABASE production;", SafetyLevel::Destructive),
         ("git push origin main --force", SafetyLevel::Destructive),
         ("git reset --hard HEAD~1", SafetyLevel::Destructive),
+        ("terraform destroy -auto-approve", SafetyLevel::Destructive),
+        ("kubectl delete ns prod", SafetyLevel::Destructive),
+        ("kubectl delete namespace staging", SafetyLevel::Destructive),
+        ("docker system prune -a", SafetyLevel::Destructive),
+        ("conda env remove -n base", SafetyLevel::Destructive),
+        ("helm uninstall production-app", SafetyLevel::Destructive),
+        ("aws s3 rb s3://my-bucket --force", SafetyLevel::Destructive),
+        ("az group delete --name my-rg", SafetyLevel::Destructive),
     ];
 
     for (cmd, expected) in cases {

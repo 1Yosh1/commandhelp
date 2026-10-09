@@ -4,7 +4,13 @@
 # Tab / Right   : accept the ghost-text suggestion (falls back to the stock widget)
 
 # Warm the daemon so the first completion is served inside the 15ms budget.
-command chelp daemon --detached >/dev/null 2>&1
+# Privacy kill switch: CHELP_DISABLE_DAEMON=1 degrades to a no-op hook (no spawn,
+# no completion calls) for audited/HIPAA workstations.
+if [[ "${CHELP_DISABLE_DAEMON:-}" != "1" ]]; then
+  command chelp daemon --detached >/dev/null 2>&1
+else
+  return 0
+fi
 
 # --- Trigger 2: natural language ------------------------------------------
 _chelp_query() {
