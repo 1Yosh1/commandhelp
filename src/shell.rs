@@ -34,12 +34,12 @@ fn substitute_trigger(shell: &str, hook: &str) -> String {
     }
 
     // Map "ctrl-x" style names into each shell's syntax.
-    let letter = key
-        .strip_prefix("ctrl-")
-        .and_then(|rest| {
-            let first = rest.chars().next()?;
-            first.is_ascii_alphabetic().then(|| first.to_ascii_lowercase())
-        });
+    let letter = key.strip_prefix("ctrl-").and_then(|rest| {
+        let first = rest.chars().next()?;
+        first
+            .is_ascii_alphabetic()
+            .then(|| first.to_ascii_lowercase())
+    });
     let Some(letter) = letter else {
         return hook.to_string(); // unsupported name: keep default binding
     };
@@ -47,18 +47,28 @@ fn substitute_trigger(shell: &str, hook: &str) -> String {
     match shell {
         "zsh" => {
             // ^X binds control characters; support only letters.
-            hook.replace("bindkey '^ '   chelp-query", &format!("bindkey '^{}'  chelp-query", letter))
+            hook.replace(
+                "bindkey '^ '   chelp-query",
+                &format!("bindkey '^{}'  chelp-query", letter),
+            )
         }
         "bash" => {
             // \C-x is readline's control-letter syntax.
-            hook.replace("\"\\C-@\": _chelp_query", &format!("\"\\C-{}\": _chelp_query", letter))
+            hook.replace(
+                "\"\\C-@\": _chelp_query",
+                &format!("\"\\C-{}\": _chelp_query", letter),
+            )
         }
-        "fish" => {
-            hook.replace("bind \\C-space __chelp_query", &format!("bind \\C-{} __chelp_query", letter))
-        }
+        "fish" => hook.replace(
+            "bind \\C-space __chelp_query",
+            &format!("bind \\C-{} __chelp_query", letter),
+        ),
         "powershell" | "pwsh" => {
             // PSReadLine chords like Ctrl+X.
-            hook.replace("'Ctrl+Space'", &format!("'Ctrl+{}'", letter.to_ascii_uppercase()))
+            hook.replace(
+                "'Ctrl+Space'",
+                &format!("'Ctrl+{}'", letter.to_ascii_uppercase()),
+            )
         }
         _ => hook.to_string(),
     }

@@ -74,7 +74,9 @@ async fn test_pro_provider_resolve_intent() {
         let n = socket.read(&mut buf).await.unwrap();
         let request = String::from_utf8_lossy(&buf[..n]);
 
-        assert!(request.to_lowercase().contains("authorization: bearer mock-secret-token"));
+        assert!(request
+            .to_lowercase()
+            .contains("authorization: bearer mock-secret-token"));
         assert!(request.contains("/api/query"));
 
         let response_body = serde_json::json!({
@@ -82,7 +84,8 @@ async fn test_pro_provider_resolve_intent() {
             "explanation": "Lists all containers including stopped ones",
             "safety_level": "safe",
             "destructive_warning": null
-        }).to_string();
+        })
+        .to_string();
 
         let http_response = format!(
             "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
@@ -106,7 +109,9 @@ async fn test_pro_provider_resolve_intent() {
     };
 
     use chelp::ai::AiProvider;
-    let res = provider.resolve_intent("list docker containers", &ctx, &[]).await;
+    let res = provider
+        .resolve_intent("list docker containers", &ctx, &[])
+        .await;
     assert!(res.is_ok(), "Expected Ok response, got: {:?}", res.err());
 
     let ai_resp = res.unwrap();
@@ -116,4 +121,3 @@ async fn test_pro_provider_resolve_intent() {
 
     server_task.await.unwrap();
 }
-

@@ -7,7 +7,9 @@ fn test_cli_help_flag() {
     cmd.arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("Universal AI-Powered CLI Assistant"))
+        .stdout(predicate::str::contains(
+            "Universal AI-Powered CLI Assistant",
+        ))
         .stdout(predicate::str::contains("Usage: chelp"))
         .stdout(predicate::str::contains("setup"))
         .stdout(predicate::str::contains("config"))
@@ -20,7 +22,7 @@ fn test_cli_version_flag() {
     cmd.arg("--version")
         .assert()
         .success()
-        .stdout(predicate::str::contains("chelp 0.1.2"));
+        .stdout(predicate::str::contains("chelp 0.1.3"));
 }
 
 #[test]
@@ -69,7 +71,10 @@ fn test_cli_complete_graceful_without_daemon() {
     // treats that as "no suggestion") while still explaining itself on stderr.
     let mut cmd = Command::cargo_bin("chelp").unwrap();
     cmd.env("CHELP_NO_AUTO_SPAWN", "1")
-        .env("CHELP_SOCKET", format!("chelp-absent-{}", std::process::id()))
+        .env(
+            "CHELP_SOCKET",
+            format!("chelp-absent-{}", std::process::id()),
+        )
         .args(["complete", "docker run "])
         .assert()
         .success()
@@ -96,7 +101,10 @@ fn test_cli_complete_logs_diagnostics_into_the_state_dir() {
     let mut cmd = Command::cargo_bin("chelp").unwrap();
     cmd.env("CHELP_HOME", dir.path())
         .env("CHELP_NO_AUTO_SPAWN", "1")
-        .env("CHELP_SOCKET", format!("chelp-absent-2-{}", std::process::id()))
+        .env(
+            "CHELP_SOCKET",
+            format!("chelp-absent-2-{}", std::process::id()),
+        )
         .args(["complete", "git st"])
         .assert()
         .success();

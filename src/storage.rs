@@ -54,8 +54,9 @@ impl SchemaStore {
     ) -> Result<Option<CliCommandSchema>, ChelpError> {
         let subcmd_str = subcommands.join(" ");
         let conn = self.conn.lock().unwrap();
-        let mut stmt =
-            conn.prepare("SELECT schema_json FROM cli_schemas WHERE binary = ?1 AND subcommand_path = ?2")?;
+        let mut stmt = conn.prepare(
+            "SELECT schema_json FROM cli_schemas WHERE binary = ?1 AND subcommand_path = ?2",
+        )?;
         let mut rows = stmt.query(params![binary, subcmd_str])?;
 
         if let Some(row) = rows.next()? {

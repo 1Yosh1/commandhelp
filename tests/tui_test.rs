@@ -76,8 +76,14 @@ fn test_handle_key_events() {
     );
 
     // Unhandled keys -> None
-    assert_eq!(handle_key_event(key(KeyCode::Char(' ')), cmd, false, &mut armed), None);
-    assert_eq!(handle_key_event(key(KeyCode::Down), cmd, false, &mut armed), None);
+    assert_eq!(
+        handle_key_event(key(KeyCode::Char(' ')), cmd, false, &mut armed),
+        None
+    );
+    assert_eq!(
+        handle_key_event(key(KeyCode::Down), cmd, false, &mut armed),
+        None
+    );
 }
 
 /// Spec §5.4: a destructive command must not execute on the first Enter.
@@ -155,7 +161,11 @@ fn test_tui_render_destructive_command_layout() {
     let mut armed_terminal = Terminal::new(TestBackend::new(100, 20)).unwrap();
     draw_confirmation_ui(&mut armed_terminal, &resp, true).unwrap();
     let armed = format!("{:?}", armed_terminal.backend().buffer());
-    assert!(armed.contains("[y]"), "armed modal should ask for y: {}", armed);
+    assert!(
+        armed.contains("[y]"),
+        "armed modal should ask for y: {}",
+        armed
+    );
 }
 
 #[test]
@@ -182,7 +192,10 @@ fn test_render_interactive_confirmation_with_mock_events() {
         &resp,
     );
 
-    assert_eq!(action.unwrap(), UserAction::Edit("cargo check --release".to_string()));
+    assert_eq!(
+        action.unwrap(),
+        UserAction::Edit("cargo check --release".to_string())
+    );
 }
 
 /// A destructive response walks Enter (arm) -> y (confirm) through the same
@@ -194,7 +207,9 @@ fn test_render_interactive_confirmation_gates_destructive_command() {
         command: "mkfs.ext4 /dev/sdb1".to_string(),
         explanation: "Formats the disk".to_string(),
         safety_level: SafetyLevel::Destructive,
-        destructive_warning: Some("Disk formatting completely wipes storage partitions.".to_string()),
+        destructive_warning: Some(
+            "Disk formatting completely wipes storage partitions.".to_string(),
+        ),
     };
 
     let mut events = VecDeque::from([

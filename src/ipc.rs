@@ -174,7 +174,10 @@ async fn send(name: &str, req: &IpcRequest) -> Result<IpcResponse, ChelpError> {
     stream.read_exact(&mut res_len_buf).await?;
     let res_len = u32::from_le_bytes(res_len_buf) as usize;
     if res_len > MAX_FRAME_BYTES {
-        return Err(ChelpError::Ipc(format!("oversized response ({} bytes)", res_len)));
+        return Err(ChelpError::Ipc(format!(
+            "oversized response ({} bytes)",
+            res_len
+        )));
     }
 
     let mut res_buf = vec![0u8; res_len];
@@ -268,7 +271,10 @@ where
     stream.read_exact(&mut len_buf).await?;
     let len = u32::from_le_bytes(len_buf) as usize;
     if len > MAX_FRAME_BYTES {
-        return Err(ChelpError::Ipc(format!("oversized request ({} bytes)", len)));
+        return Err(ChelpError::Ipc(format!(
+            "oversized request ({} bytes)",
+            len
+        )));
     }
     let mut buf = vec![0u8; len];
     stream.read_exact(&mut buf).await?;

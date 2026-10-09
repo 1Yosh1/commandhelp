@@ -6,7 +6,10 @@ use chelp::safety::evaluate_command_safety;
 fn test_destructive_patterns() {
     let cases = vec![
         ("rm -rf /var/log", SafetyLevel::Destructive),
-        ("Remove-Item -Recurse -Force C:\\temp", SafetyLevel::Destructive),
+        (
+            "Remove-Item -Recurse -Force C:\\temp",
+            SafetyLevel::Destructive,
+        ),
         ("del /f /s /q *.txt", SafetyLevel::Destructive),
         ("format D: /fs:NTFS", SafetyLevel::Destructive),
         ("dd if=/dev/zero of=/dev/sda", SafetyLevel::Destructive),
@@ -33,7 +36,13 @@ fn test_destructive_patterns() {
 #[test]
 fn test_safe_and_caution_patterns() {
     assert_eq!(evaluate_command_safety("git status").0, SafetyLevel::Safe);
-    assert_eq!(evaluate_command_safety("find . -name '*.rs'").0, SafetyLevel::Safe);
+    assert_eq!(
+        evaluate_command_safety("find . -name '*.rs'").0,
+        SafetyLevel::Safe
+    );
     assert_eq!(evaluate_command_safety("docker ps -a").0, SafetyLevel::Safe);
-    assert_eq!(evaluate_command_safety("git push origin feature-branch").0, SafetyLevel::Caution);
+    assert_eq!(
+        evaluate_command_safety("git push origin feature-branch").0,
+        SafetyLevel::Caution
+    );
 }

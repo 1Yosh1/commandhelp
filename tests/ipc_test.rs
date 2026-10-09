@@ -4,8 +4,8 @@ use chelp::ipc::{
     COMPLETE_BUDGET,
 };
 use chelp::storage::SchemaStore;
-use tempfile::NamedTempFile;
 use std::time::{Duration, Instant};
+use tempfile::NamedTempFile;
 
 /// Tests own the daemon lifecycle; never let the client auto-spawn one.
 fn isolate() {
@@ -41,7 +41,11 @@ async fn test_ipc_roundtrip_ping() {
     assert_eq!(res, IpcResponse::Pong);
     // Spec §8.2: local roundtrip should be sub-millisecond; assert a ceiling
     // generous enough for a loaded CI box.
-    assert!(elapsed < Duration::from_millis(500), "roundtrip took {:?}", elapsed);
+    assert!(
+        elapsed < Duration::from_millis(500),
+        "roundtrip took {:?}",
+        elapsed
+    );
 
     server_handle.abort();
     cleanup_socket(&socket);
@@ -81,7 +85,10 @@ async fn test_stale_socket_is_reclaimed() {
     // daemon will actually look for it.
     let stale_path = chelp::ipc::socket_file(&socket);
     std::fs::write(&stale_path, b"stale").unwrap();
-    assert!(!is_running(&socket).await, "a plain file is not a live daemon");
+    assert!(
+        !is_running(&socket).await,
+        "a plain file is not a live daemon"
+    );
 
     let server_handle = start_daemon(store.clone(), &socket)
         .await

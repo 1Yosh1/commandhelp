@@ -9,24 +9,75 @@ fn destructive_patterns() -> &'static [(Regex, &'static str)] {
     static PATTERNS: OnceLock<Vec<(Regex, &'static str)>> = OnceLock::new();
     PATTERNS.get_or_init(|| {
         [
-            (r"(?i)\brm\s+-[a-zA-Z]*r[a-zA-Z]*\b", "Recursive file removal (rm -r) permanently deletes data."),
-            (r"(?i)\bRemove-Item\b.*-Recurse", "PowerShell recursive item removal permanently deletes data."),
+            (
+                r"(?i)\brm\s+-[a-zA-Z]*r[a-zA-Z]*\b",
+                "Recursive file removal (rm -r) permanently deletes data.",
+            ),
+            (
+                r"(?i)\bRemove-Item\b.*-Recurse",
+                "PowerShell recursive item removal permanently deletes data.",
+            ),
             (r"(?i)\bdel\b.*(/s|/q)", "Recursive/silent file deletion."),
-            (r"(?i)\b(mkfs|format)\b", "Disk formatting completely wipes storage partitions."),
-            (r"(?i)\bdd\b.*of=/dev/", "Raw disk write can overwrite boot sectors or partitions."),
-            (r"(?i)\b(DROP\s+DATABASE|DROP\s+TABLE|TRUNCATE)\b", "Destructive SQL operation deletes database tables."),
-            (r"(?i)\bgit\s+push\b.*(--force|-f)\b", "Git force-push overwrites remote repository history."),
-            (r"(?i)\bgit\s+reset\s+--hard\b", "Hard git reset discards all uncommitted local changes."),
-            (r"(?i)\bkillall\b", "killall terminates every matching process without confirmation."),
-            (r"(?i)\bkill\s+-9\b", "SIGKILL forces processes to terminate without saving state."),
-            (r"(?i)\bStop-Process\b.*-Force", "Forces process termination without cleanup."),
-            (r"(?i)\bterraform\s+.*destroy\b", "Terraform destroy tears down cloud infrastructure."),
-            (r"(?i)\bkubectl\s+delete\s+(ns|namespace|all|pv|pvc)\b", "Kubernetes resource deletion destroys cluster infrastructure."),
-            (r"(?i)\bdocker\s+system\s+prune\b.*(-a|--all)", "Docker prune removes all unused containers, networks, and images."),
-            (r"(?i)\bconda\s+env\s+remove\b", "Conda environment removal permanently deletes your environment."),
-            (r"(?i)\bhelm\s+uninstall\b", "Helm uninstall removes release and deletes cluster components."),
-            (r"(?i)\baws\s+s3\s+rb\b.*--force", "Force-deleting S3 bucket destroys all objects inside."),
-            (r"(?i)\baz\s+group\s+delete\b", "Azure resource group deletion destroys all contained cloud resources."),
+            (
+                r"(?i)\b(mkfs|format)\b",
+                "Disk formatting completely wipes storage partitions.",
+            ),
+            (
+                r"(?i)\bdd\b.*of=/dev/",
+                "Raw disk write can overwrite boot sectors or partitions.",
+            ),
+            (
+                r"(?i)\b(DROP\s+DATABASE|DROP\s+TABLE|TRUNCATE)\b",
+                "Destructive SQL operation deletes database tables.",
+            ),
+            (
+                r"(?i)\bgit\s+push\b.*(--force|-f)\b",
+                "Git force-push overwrites remote repository history.",
+            ),
+            (
+                r"(?i)\bgit\s+reset\s+--hard\b",
+                "Hard git reset discards all uncommitted local changes.",
+            ),
+            (
+                r"(?i)\bkillall\b",
+                "killall terminates every matching process without confirmation.",
+            ),
+            (
+                r"(?i)\bkill\s+-9\b",
+                "SIGKILL forces processes to terminate without saving state.",
+            ),
+            (
+                r"(?i)\bStop-Process\b.*-Force",
+                "Forces process termination without cleanup.",
+            ),
+            (
+                r"(?i)\bterraform\s+.*destroy\b",
+                "Terraform destroy tears down cloud infrastructure.",
+            ),
+            (
+                r"(?i)\bkubectl\s+delete\s+(ns|namespace|all|pv|pvc)\b",
+                "Kubernetes resource deletion destroys cluster infrastructure.",
+            ),
+            (
+                r"(?i)\bdocker\s+system\s+prune\b.*(-a|--all)",
+                "Docker prune removes all unused containers, networks, and images.",
+            ),
+            (
+                r"(?i)\bconda\s+env\s+remove\b",
+                "Conda environment removal permanently deletes your environment.",
+            ),
+            (
+                r"(?i)\bhelm\s+uninstall\b",
+                "Helm uninstall removes release and deletes cluster components.",
+            ),
+            (
+                r"(?i)\baws\s+s3\s+rb\b.*--force",
+                "Force-deleting S3 bucket destroys all objects inside.",
+            ),
+            (
+                r"(?i)\baz\s+group\s+delete\b",
+                "Azure resource group deletion destroys all contained cloud resources.",
+            ),
         ]
         .iter()
         .map(|(pattern, warning)| (Regex::new(pattern).unwrap(), *warning))

@@ -95,7 +95,10 @@ impl Sandbox {
 
     fn env(&self) -> Vec<(String, String)> {
         vec![
-            ("CHELP_HOME".to_string(), self.home.to_string_lossy().to_string()),
+            (
+                "CHELP_HOME".to_string(),
+                self.home.to_string_lossy().to_string(),
+            ),
             ("CHELP_SOCKET".to_string(), self.socket.clone()),
             // The tests own the daemon lifecycle.
             ("CHELP_NO_AUTO_SPAWN".to_string(), "1".to_string()),
@@ -298,7 +301,11 @@ fn query_enter_renders_modal_and_prints_command() {
         ],
     );
 
-    assert!(status.map(|s| s.success()).unwrap_or(false), "exit status in:\n{}", output);
+    assert!(
+        status.map(|s| s.success()).unwrap_or(false),
+        "exit status in:\n{}",
+        output
+    );
     assert!(
         tail(&output).ends_with("ls -la"),
         "Enter should surface the command; tail was:\n{}",
@@ -315,13 +322,14 @@ fn query_escape_cancels_without_emitting_command() {
     let (output, status) = run_in_pty(
         &["query", "list the files"],
         &sandbox.env(),
-        &[
-            Step::WaitFor("Suggested Command"),
-            Step::Send(b"\x1b"),
-        ],
+        &[Step::WaitFor("Suggested Command"), Step::Send(b"\x1b")],
     );
 
-    assert!(status.map(|s| s.success()).unwrap_or(false), "exit status in:\n{}", output);
+    assert!(
+        status.map(|s| s.success()).unwrap_or(false),
+        "exit status in:\n{}",
+        output
+    );
     assert!(
         !tail(&output).ends_with("ls -la"),
         "Escape must cancel silently; tail was:\n{}",
@@ -333,7 +341,10 @@ fn query_escape_cancels_without_emitting_command() {
 fn destructive_command_needs_a_second_confirmation_key() {
     let sandbox = Sandbox::new("destructive");
     // The model calls it "safe"; the local heuristic must still gate it.
-    let endpoint = spawn_mock_ai("rm -rf /tmp/scratch-workspace", "Removes the scratch workspace.");
+    let endpoint = spawn_mock_ai(
+        "rm -rf /tmp/scratch-workspace",
+        "Removes the scratch workspace.",
+    );
     sandbox.write_config(&endpoint);
 
     let (output, status) = run_in_pty(
@@ -346,7 +357,11 @@ fn destructive_command_needs_a_second_confirmation_key() {
         ],
     );
 
-    assert!(status.map(|s| s.success()).unwrap_or(false), "exit status in:\n{}", output);
+    assert!(
+        status.map(|s| s.success()).unwrap_or(false),
+        "exit status in:\n{}",
+        output
+    );
     assert!(
         tail(&output).ends_with("rm -rf /tmp/scratch-workspace"),
         "pressing y after Enter should confirm; tail was:\n{}",
@@ -396,7 +411,11 @@ fn complete_answers_from_an_indexed_schema() {
         usage: "demo <command>".to_string(),
         description: "Demo CLI".to_string(),
         flags: vec![],
-        subcommands: vec!["status".to_string(), "stash".to_string(), "switch".to_string()],
+        subcommands: vec![
+            "status".to_string(),
+            "stash".to_string(),
+            "switch".to_string(),
+        ],
         binary_mtime: 0,
         last_indexed: 1,
     };

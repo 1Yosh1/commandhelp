@@ -5,7 +5,11 @@ use std::process::{Command, Stdio};
 
 /// Every hook must speak the same contract as `chelp query` / `chelp complete`.
 fn assert_common_contract(shell: &str, script: &str) {
-    assert!(script.contains("chelp query"), "{}: missing query hook", shell);
+    assert!(
+        script.contains("chelp query"),
+        "{}: missing query hook",
+        shell
+    );
     assert!(
         script.contains("--out-file"),
         "{}: must capture the result in a file, never via stdout",
@@ -70,8 +74,14 @@ fn test_zsh_hook_contract_and_syntax() {
     let zsh = generate_hook_script("zsh").unwrap();
     assert!(zsh.contains("zle -N chelp-query"));
     assert!(zsh.contains("bindkey '^ '"));
-    assert!(zsh.contains("bindkey '^I'"), "Tab must accept the suggestion");
-    assert!(zsh.contains("POSTDISPLAY"), "zsh renders ghost text via POSTDISPLAY");
+    assert!(
+        zsh.contains("bindkey '^I'"),
+        "Tab must accept the suggestion"
+    );
+    assert!(
+        zsh.contains("POSTDISPLAY"),
+        "zsh renders ghost text via POSTDISPLAY"
+    );
     assert!(zsh.contains("accept-line"), "Enter must run the command");
     assert_common_contract("zsh", &zsh);
     assert_shell_syntax("zsh", &zsh);
@@ -82,7 +92,10 @@ fn test_bash_hook_contract_and_syntax() {
     let bash = generate_hook_script("bash").unwrap();
     assert!(bash.contains("bind -x"));
     assert!(bash.contains("READLINE_LINE"));
-    assert!(bash.contains("history -s"), "run must land in shell history");
+    assert!(
+        bash.contains("history -s"),
+        "run must land in shell history"
+    );
     assert_common_contract("bash", &bash);
     assert_shell_syntax("bash", &bash);
 }
@@ -91,7 +104,10 @@ fn test_bash_hook_contract_and_syntax() {
 fn test_fish_hook_contract() {
     let fish = generate_hook_script("fish").unwrap();
     assert!(fish.contains("commandline"));
-    assert!(fish.contains("commandline -f execute"), "run must execute in fish");
+    assert!(
+        fish.contains("commandline -f execute"),
+        "run must execute in fish"
+    );
     assert!(fish.contains("bind "));
     assert_common_contract("fish", &fish);
     assert_shell_syntax("fish", &fish);
@@ -100,5 +116,9 @@ fn test_fish_hook_contract() {
 #[test]
 fn test_unsupported_shell_is_rejected() {
     let err = generate_hook_script("csh").unwrap_err();
-    assert!(err.to_string().contains("Unsupported shell: csh"), "{}", err);
+    assert!(
+        err.to_string().contains("Unsupported shell: csh"),
+        "{}",
+        err
+    );
 }

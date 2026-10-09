@@ -1,6 +1,6 @@
 # Handoff — CommandHelp (`chelp`)
 
-_Last updated: 2026-10-04 · branch `master` @ `ca14671` (pushed, in sync with `origin/master`)_
+_Last updated: 2026-10-09 · branch `master` @ `21db4c1`+ (pushed, in sync with `origin/master`)_
 
 ## What this is
 
@@ -23,7 +23,10 @@ chelp query:  provider HTTP (ai.rs) → modal (tui.rs, ratatui + crossterm)
               hook executes (run) or lands it on the prompt (edit)
 daemon: on-demand --help/man crawl (crawler.rs) → parse (parser.rs) → SQLite (storage.rs)
 state:  everything under $CHELP_HOME (fallback ~/.chelp): config.toml, data.db, chelp.log
-socket: /tmp/$CHELP_SOCKET (fallback chelp-ipc); stale sockets reclaimed after probe
+socket: $CHELP_SOCKET_PATH dir (fallback temp); file 0600'd at bind, stale sockets reclaimed
+env:    CHELP_DISABLE_DAEMON (kill switch), CHELP_SOCKET_PATH, CHELP_TRIGGER_KEY, CHELP_API_KEY
+diag:   chelp status | privacy | bench | cache clear/info | --dump-ast (docs/security.md)
+release: .github/workflows/release.yml — 5-target prebuilt binaries + SHA256 on v* tags
 ```
 
 ## Non-negotiable conventions (do not regress these)
@@ -57,25 +60,23 @@ cargo clippy --all-targets   # currently 0 warnings
   non-tty stdin, on-demand indexing) — includes a mock OpenAI server, fully hermetic.
 - Hook contract + `zsh -n`/`bash -n`: `tests/shell_test.rs`.
 - Parser corpus: 36 fixtures in `tests/fixtures/` (spec §8.1 wants ≥30, enforced).
-- **`cargo fmt --check` currently FAILS** — pre-existing repo-wide drift plus mixed
-  CRLF in `src/parser.rs`. Not auto-fixed to keep commit history readable; a dedicated
-  `cargo fmt` commit is the intended cleanup.
+- ~~`cargo fmt --check` fails~~ **FIXED 2026-10-09**: dedicated `cargo fmt` pass
+  landed (CRLF in `src/parser.rs` normalized); `fmt --check` is clean and must stay so.
 - The external 18-check live shell harness (`verify_hooks.py`, incl. a source-built
   bash 5.2 at `/tmp/bash5`) was lost to a `/tmp` purge. Rebuilding it is open work.
 
 ## Open work (priority order)
 
 1. **`? <query>` prefix trigger (spec §3.2)** — natural language should also activate
-   by typing `? <task>` + Enter. Only `Ctrl+Space` exists today. Needs a cross-shell
-   Enter-binding design; bash `bind -x` on Enter is the hard case (handler cannot
-   conditionally re-dispatch the key).
+   by typing `? <task>` + Enter. Only `Ctrl+Space` (remappable via `CHELP_TRIGGER_KEY`)
+   exists today. Needs a cross-shell Enter-binding design; bash `bind -x` on Enter is
+   the hard case (handler cannot conditionally re-dispatch the key).
 2. **Durable live-shell harness** — port the 18-check zsh/bash suite into the repo
    with a bash 5 bootstrap so it survives `/tmp` wipes.
 3. **Live fish + PowerShell verification** — both have contract tests only; nothing
    has been run on Windows.
 4. **`cargo fmt` pass** (own commit) and decide on CRLF normalization.
-5. **MIT `LICENSE` file** — README claims MIT but no file exists (page links to the
-   README section instead).
+5. ~~MIT `LICENSE` file~~ **FIXED 2026-10-09**: committed; README/site links stay as-is.
 6. **Deploy the site** — `site/index.html` + `vercel.json` root rewrite are ready;
    needs the Vercel account/CLI. `.freebuff/` is intentionally untracked.
 7. Cosmetic spec deviations, consciously accepted: modal is an alt-screen takeover

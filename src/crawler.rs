@@ -126,10 +126,7 @@ pub fn binary_mtime(binary: &str) -> u64 {
 }
 
 /// Crawl + parse + stamp: the one entry point the daemon uses to index a binary.
-pub fn crawl_schema(
-    binary: &str,
-    subcommands: &[String],
-) -> Result<CliCommandSchema, ChelpError> {
+pub fn crawl_schema(binary: &str, subcommands: &[String]) -> Result<CliCommandSchema, ChelpError> {
     let help = crawl_command_help(binary, subcommands)?;
     let mut schema = parse_help_output(binary, subcommands, &help)?;
     schema.binary_mtime = binary_mtime(binary);

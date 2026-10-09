@@ -1,5 +1,5 @@
 // src/log.rs
-use crate::config::{get_log_path, get_config_dir};
+use crate::config::{get_config_dir, get_log_path};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::time::{SystemTime, UNIX_EPOCH};

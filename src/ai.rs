@@ -128,9 +128,12 @@ async fn resolve_via_http(
             ChelpError::AiProvider(format!("Invalid response from {}: {}", provider, e))
         })?
     } else {
-        let text = value.pointer(text_pointer).and_then(Value::as_str).ok_or_else(|| {
-            ChelpError::AiProvider(format!("Empty model response from {}", provider))
-        })?;
+        let text = value
+            .pointer(text_pointer)
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                ChelpError::AiProvider(format!("Empty model response from {}", provider))
+            })?;
         let cleaned = clean_json_response(text);
         serde_json::from_str(cleaned).map_err(|e| {
             ChelpError::AiProvider(format!(
@@ -238,11 +241,21 @@ impl AiProvider for OpenAiProvider {
         });
         let headers = [
             ("Authorization", format!("Bearer {}", self.api_key)),
-            ("HTTP-Referer", "https://github.com/1Yosh1/commandhelp".to_string()),
+            (
+                "HTTP-Referer",
+                "https://github.com/1Yosh1/commandhelp".to_string(),
+            ),
             ("X-Title", "CommandHelp CLI".to_string()),
         ];
-        resolve_via_http("OpenAI", &self.client, &url, &headers, body, "/choices/0/message/content")
-            .await
+        resolve_via_http(
+            "OpenAI",
+            &self.client,
+            &url,
+            &headers,
+            body,
+            "/choices/0/message/content",
+        )
+        .await
     }
 }
 
@@ -389,7 +402,10 @@ pub fn create_provider_from_config(cfg: &AiConfig) -> Result<Box<dyn AiProvider>
                             .to_string(),
                     )
                 })?;
-            let model = cfg.model.clone().unwrap_or_else(|| "gemini-2.5-flash".to_string());
+            let model = cfg
+                .model
+                .clone()
+                .unwrap_or_else(|| "gemini-2.5-flash".to_string());
             Ok(Box::new(GeminiProvider::with_model(key, model)))
         }
         "openai" => {
@@ -403,7 +419,11 @@ pub fn create_provider_from_config(cfg: &AiConfig) -> Result<Box<dyn AiProvider>
                             .to_string(),
                     )
                 })?;
-            Ok(Box::new(OpenAiProvider::new(key, cfg.model.clone(), cfg.endpoint.clone())))
+            Ok(Box::new(OpenAiProvider::new(
+                key,
+                cfg.model.clone(),
+                cfg.endpoint.clone(),
+            )))
         }
         "anthropic" | "claude" => {
             let key = cfg
@@ -418,13 +438,21 @@ pub fn create_provider_from_config(cfg: &AiConfig) -> Result<Box<dyn AiProvider>
                 })?;
             Ok(Box::new(AnthropicProvider::new(key, cfg.model.clone())))
         }
-        "ollama" => Ok(Box::new(OllamaProvider::new(cfg.endpoint.clone(), cfg.model.clone()))),
+        "ollama" => Ok(Box::new(OllamaProvider::new(
+            cfg.endpoint.clone(),
+            cfg.model.clone(),
+        ))),
         "pro" | "cloud" => {
             let token = cfg
                 .api_key
                 .clone()
                 .or_else(|| std::env::var("CHELP_API_TOKEN").ok())
-                .or_else(|| crate::auth::load_credentials().ok().flatten().map(|c| c.token))
+                .or_else(|| {
+                    crate::auth::load_credentials()
+                        .ok()
+                        .flatten()
+                        .map(|c| c.token)
+                })
                 .ok_or_else(|| {
                     ChelpError::Config(
                         "Missing CommandHelp Pro token. Run 'chelp login' to authenticate."
@@ -445,7 +473,11 @@ pub fn create_provider_from_config(cfg: &AiConfig) -> Result<Box<dyn AiProvider>
                         .to_string(),
                 )
             })?;
-            Ok(Box::new(OpenAiProvider::new(key, cfg.model.clone(), Some(endpoint))))
+            Ok(Box::new(OpenAiProvider::new(
+                key,
+                cfg.model.clone(),
+                Some(endpoint),
+            )))
         }
         other => Err(ChelpError::Config(format!(
             "Unknown provider '{}'. Supported: gemini, openai, anthropic, ollama, pro, custom",

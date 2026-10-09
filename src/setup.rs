@@ -10,8 +10,10 @@ use std::path::{Path, PathBuf};
 fn describe_profile_target() -> Option<String> {
     if cfg!(target_os = "windows") {
         let home = std::env::var("USERPROFILE").ok()?;
-        let pwsh7 = PathBuf::from(&home).join("Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1");
-        let win = PathBuf::from(&home).join("Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1");
+        let pwsh7 =
+            PathBuf::from(&home).join("Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1");
+        let win = PathBuf::from(&home)
+            .join("Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1");
         if pwsh7.parent().is_some_and(|p| p.exists()) {
             Some(pwsh7.to_string_lossy().to_string())
         } else {
@@ -52,7 +54,10 @@ pub async fn run_setup() -> Result<(), ChelpError> {
     let hook_line = if cfg!(target_os = "windows") {
         format!("Invoke-Expression (& \"{}\" init pwsh)", exe_path)
     } else {
-        format!("eval \"$(\"{}\" init zsh)\"\n# or: eval \"$(\"{}\" init bash)\"", exe_path, exe_path)
+        format!(
+            "eval \"$(\"{}\" init zsh)\"\n# or: eval \"$(\"{}\" init bash)\"",
+            exe_path, exe_path
+        )
     };
     println!(
         "  chelp wants to append this line to {}:",
@@ -92,8 +97,10 @@ pub async fn run_setup() -> Result<(), ChelpError> {
 fn setup_shell_profile(exe_path: &str) -> Result<(), ChelpError> {
     if cfg!(target_os = "windows") {
         let home = std::env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users".to_string());
-        let pwsh7_profile = PathBuf::from(&home).join("Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1");
-        let win_pwsh_profile = PathBuf::from(&home).join("Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1");
+        let pwsh7_profile =
+            PathBuf::from(&home).join("Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1");
+        let win_pwsh_profile = PathBuf::from(&home)
+            .join("Documents\\WindowsPowerShell\\Microsoft.PowerShell_profile.ps1");
 
         let target_profile = if pwsh7_profile.parent().is_some_and(|p| p.exists()) {
             pwsh7_profile
@@ -101,7 +108,11 @@ fn setup_shell_profile(exe_path: &str) -> Result<(), ChelpError> {
             win_pwsh_profile
         };
 
-        install_hook_to_file(&target_profile, &format!("Invoke-Expression (& \"{}\" init pwsh)", exe_path), "# CommandHelp Hook")?;
+        install_hook_to_file(
+            &target_profile,
+            &format!("Invoke-Expression (& \"{}\" init pwsh)", exe_path),
+            "# CommandHelp Hook",
+        )?;
         println!("  ✔ PowerShell hook installed to: {:?}", target_profile);
     } else {
         let home = std::env::var("HOME").unwrap_or_else(|_| "/root".to_string());
@@ -109,10 +120,18 @@ fn setup_shell_profile(exe_path: &str) -> Result<(), ChelpError> {
         let bashrc = PathBuf::from(&home).join(".bashrc");
 
         if zshrc.exists() {
-            install_hook_to_file(&zshrc, &format!("eval \"$(\"{}\" init zsh)\"", exe_path), "# CommandHelp Hook")?;
+            install_hook_to_file(
+                &zshrc,
+                &format!("eval \"$(\"{}\" init zsh)\"", exe_path),
+                "# CommandHelp Hook",
+            )?;
             println!("  ✔ Zsh hook installed to: {:?}", zshrc);
         } else if bashrc.exists() {
-            install_hook_to_file(&bashrc, &format!("eval \"$(\"{}\" init bash)\"", exe_path), "# CommandHelp Hook")?;
+            install_hook_to_file(
+                &bashrc,
+                &format!("eval \"$(\"{}\" init bash)\"", exe_path),
+                "# CommandHelp Hook",
+            )?;
             println!("  ✔ Bash hook installed to: {:?}", bashrc);
         }
     }
@@ -208,7 +227,11 @@ pub async fn run_config_wizard() -> Result<(), ChelpError> {
             let mut ep = String::new();
             let _ = reader.read_line(&mut ep);
             let ep = ep.trim();
-            ai_config.endpoint = Some(if ep.is_empty() { "https://openrouter.ai/api/v1".to_string() } else { ep.to_string() });
+            ai_config.endpoint = Some(if ep.is_empty() {
+                "https://openrouter.ai/api/v1".to_string()
+            } else {
+                ep.to_string()
+            });
 
             print!("Enter API Key: ");
             let _ = io::stdout().flush();
@@ -221,7 +244,11 @@ pub async fn run_config_wizard() -> Result<(), ChelpError> {
             let mut m = String::new();
             let _ = reader.read_line(&mut m);
             let m = m.trim();
-            ai_config.model = Some(if m.is_empty() { "meta-llama/llama-3-8b-instruct".to_string() } else { m.to_string() });
+            ai_config.model = Some(if m.is_empty() {
+                "meta-llama/llama-3-8b-instruct".to_string()
+            } else {
+                m.to_string()
+            });
         }
         _ => {
             // Default: Gemini
@@ -253,14 +280,20 @@ pub async fn run_config_wizard() -> Result<(), ChelpError> {
                 cwd: ".".to_string(),
             };
             let start = std::time::Instant::now();
-            match provider.resolve_intent("list files in directory", &ctx, &[]).await {
+            match provider
+                .resolve_intent("list files in directory", &ctx, &[])
+                .await
+            {
                 Ok(resp) => {
                     println!("✔ Success! ({}ms)", start.elapsed().as_millis());
                     println!("    Test command generated: '{}'", resp.command);
                 }
                 Err(e) => {
                     println!("⚠ Warning: API test returned: {}", e);
-                    println!("    Please verify your key or model name in {:?}", saved_path);
+                    println!(
+                        "    Please verify your key or model name in {:?}",
+                        saved_path
+                    );
                 }
             }
         }

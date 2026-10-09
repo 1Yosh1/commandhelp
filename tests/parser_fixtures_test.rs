@@ -9,7 +9,9 @@ use std::path::Path;
 
 #[test]
 fn test_every_fixture_parses_into_something_useful() {
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests").join("fixtures");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures");
     let mut parsed = 0usize;
     let mut with_flags = 0usize;
     let mut with_subcommands = 0usize;
@@ -50,11 +52,7 @@ fn test_every_fixture_parses_into_something_useful() {
     );
 
     // Spec §8.1: 30+ fixtures, and the corpus must exercise both styles.
-    assert!(
-        parsed >= 30,
-        "spec asks for 30+ fixtures, found {}",
-        parsed
-    );
+    assert!(parsed >= 30, "spec asks for 30+ fixtures, found {}", parsed);
     assert!(
         with_flags >= 20,
         "expected most fixtures to yield flags, only {} did",

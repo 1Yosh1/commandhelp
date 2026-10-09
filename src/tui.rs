@@ -69,20 +69,35 @@ pub fn draw_confirmation_ui<B: ratatui::backend::Backend>(
             .split(f.size());
 
         let cmd_p = Paragraph::new(resp.command.clone())
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
-            .block(Block::default().borders(Borders::ALL).title(" Suggested Command "));
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Suggested Command "),
+            );
         f.render_widget(cmd_p, chunks[0]);
 
         let exp_p = Paragraph::new(resp.explanation.clone())
             .style(Style::default().fg(Color::White))
             .wrap(Wrap { trim: true })
-            .block(Block::default().borders(Borders::ALL).title(" Explanation "));
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Explanation "),
+            );
         f.render_widget(exp_p, chunks[1]);
 
         let destructive = resp.safety_level == SafetyLevel::Destructive;
         let (safety_text, safety_style) = match resp.safety_level {
             SafetyLevel::Safe => ("● SAFE (Read-Only)", Style::default().fg(Color::Green)),
-            SafetyLevel::Caution => ("● CAUTION (State Change)", Style::default().fg(Color::Yellow)),
+            SafetyLevel::Caution => (
+                "● CAUTION (State Change)",
+                Style::default().fg(Color::Yellow),
+            ),
             SafetyLevel::Destructive => (
                 "▲ HIGH RISK / DESTRUCTIVE ACTION",
                 Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
@@ -97,7 +112,11 @@ pub fn draw_confirmation_ui<B: ratatui::backend::Backend>(
             Span::styled(safety_text, safety_style),
             Span::raw(warning_line),
         ]))
-        .block(Block::default().borders(Borders::ALL).title(" Safety Assessment "));
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Safety Assessment "),
+        );
         f.render_widget(safety_p, chunks[2]);
 
         let controls = if destructive {
@@ -168,9 +187,7 @@ pub fn render_interactive_confirmation(resp: &AiCommandResponse) -> Result<UserA
     if !std::io::stdout().is_terminal() {
         return Ok(UserAction::Edit(resp.command.clone()));
     }
-    if enable_raw_mode().is_err()
-        || execute!(std::io::stdout(), EnterAlternateScreen).is_err()
-    {
+    if enable_raw_mode().is_err() || execute!(std::io::stdout(), EnterAlternateScreen).is_err() {
         let _ = disable_raw_mode();
         return Ok(UserAction::Edit(resp.command.clone()));
     }
@@ -184,9 +201,11 @@ pub fn render_interactive_confirmation(resp: &AiCommandResponse) -> Result<UserA
         }
     };
 
-    let action = render_interactive_confirmation_with(&mut terminal, || {
-        event::read().map_err(ChelpError::from)
-    }, resp);
+    let action = render_interactive_confirmation_with(
+        &mut terminal,
+        || event::read().map_err(ChelpError::from),
+        resp,
+    );
 
     let _ = disable_raw_mode();
     let _ = execute!(terminal.backend_mut(), LeaveAlternateScreen);

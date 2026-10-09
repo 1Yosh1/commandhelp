@@ -35,7 +35,8 @@ async fn test_cli_login_loopback() {
 
     let port = 19432;
 
-    let login_task = tokio::spawn(async move { run_cli_login(port, 5, Some("http://localhost")).await });
+    let login_task =
+        tokio::spawn(async move { run_cli_login(port, 5, Some("http://localhost")).await });
 
     // Wait for the listener to bind.
     tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
@@ -53,7 +54,10 @@ async fn test_cli_login_loopback() {
     assert!(response.contains("200 OK"));
     assert!(response.contains("Authenticated Successfully"));
 
-    let creds = login_task.await.unwrap().expect("Login listener returned error");
+    let creds = login_task
+        .await
+        .unwrap()
+        .expect("Login listener returned error");
     assert_eq!(creds.token, "secret_jwt_xyz987");
     assert_eq!(creds.email.as_deref(), Some("developer@corp.com"));
     assert_eq!(creds.plan.as_deref(), Some("Team"));
