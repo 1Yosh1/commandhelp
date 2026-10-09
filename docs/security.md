@@ -29,6 +29,11 @@ What **never** happens:
 - One background daemon serves completion requests within a 15 ms budget.
 - Transport: a single Unix-domain (or named, on Windows) local socket.
   - Name defaults to `chelp-ipc`; nothing binds on TCP.
+  - **File permissions**: the socket file is restricted to `0600` and, when
+    `CHELP_SOCKET_PATH` is set, its directory is tightened to `0700` — set
+    `CHELP_SOCKET_PATH="$XDG_RUNTIME_DIR/chelp"` to keep the socket out of
+    shared `/tmp` entirely. Verify with `chelp status` (prints the effective
+    path and mode).
   - **Opt-out kills the daemon entirely**: set `CHELP_DISABLE_DAEMON=1` and the
     hooks, the auto-spawn path and the lazy spawn path are all silent no-ops.
     Completions degrade to none; `chelp query` still talks to your provider
@@ -83,7 +88,19 @@ Recommended workstation profiles (verified pattern): run the daemon with
 (macOS) if your compliance regime requires network isolation of the daemon;
 `CHELP_DISABLE_DAEMON=1` is the simplest auditable profile of all.
 
-## 6. Verifying the claims yourself
+## 6. Remapping the trigger key
+
+If Ctrl+Space conflicts with tmux prefix or PSReadLine MenuComplete, set the
+key before sourcing the hook:
+
+```zsh
+export CHELP_TRIGGER_KEY=ctrl-f   # letters supported; ctrl-space = default
+eval "$(chelp init zsh)"
+```
+
+Works in zsh (`^x`), bash (`\C-x`), fish (`\C-x`) and PowerShell (`Ctrl+X`).
+
+## 7. Verifying the claims yourself
 
 ```bash
 strings $(which chelp) | grep -iE "telemetry|analytics|sentry"   # no hits

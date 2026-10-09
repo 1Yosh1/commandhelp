@@ -1,77 +1,95 @@
 name: Release
 
+# Prebuilt binaries for the three OS targets (sim ask from Viktor Lindqvist:
+# "requiring a Rust toolchain is a barrier; provide pre-built binaries"), with
+# SHA256 checksums that docs/security.md's audit story relies on.
+
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-release:
-    name: Build (${{ matrix.target }})
+  build:
+    name: build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            bin: chelp
-            archive_ext: tar.gz
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            bin: chelp
-            archive_ext: tar.gz
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            bin: chelp
-            archive_ext: tar.gz
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            bin: chelp.exe
-            archive_ext: zip
-
+          - target: aarch64-apple-darwin
+            os: macos-14
+          - target: x86_64-apple-darwin
+            os: macos-13
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-22.04
+          - target: x86_64-pc-windows-msvc
+            os: windows-2022
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
-      - name: Build release binary
+      - name: Add cross-compile target (linux aarch64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+
+      - name: Build release
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package Release Assets (Unix)
-        if: matrix.os != 'windows-latest'
+      - name: Package (unix)
+        if: runner.os != 'Windows'
         run: |
-          mkdir -p staging
-          cp target/${{ matrix.target }}/release/${{ matrix.bin }} staging/
-          cp README.md staging/
-          cd staging
-          tar -czvf ../chelp-${{ matrix.target }}.${{ matrix.archive_ext }} *
-          cd ..
-          shasum -a 256 chelp-${{ matrix.target }}.${{ matrix.archive_ext }} > chelp-${{ matrix.target }}.${{ matrix.archive_ext }}.sha256
+          cd target/${{ matrix.target }}/release
+          tar czf "chelp-${{ matrix.target }}.tar.gz" chelp
+          shasum -a 256 "chelp-${{ matrix.target }}.tar.gz" > "chelp-${{ matrix.target }}.tar.gz.sha256"
+          mv chelp-${{ matrix.target }}.tar.gz* "$GITHUB_WORKSPACE/"
 
-      - name: Package Release Assets (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Package (windows)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path staging -Force
-          Copy-Item target/${{ matrix.target }}/release/${{ matrix.bin }} staging/
-          Copy-Item README.md staging/
-          Compress-Archive -Path staging/* -DestinationPath chelp-${{ matrix.target }}.${{ matrix.archive_ext }} -Force
-          $hash = (Get-FileHash -Path chelp-${{ matrix.target }}.${{ matrix.archive_ext }} -Algorithm SHA256).Hash.ToLower()
-          "$hash  chelp-${{ matrix.target }}.${{ matrix.archive_ext }}" | Out-File -FilePath chelp-${{ matrix.target }}.${{ matrix.archive_ext }}.sha256 -Encoding ascii
+          $dir = "target/${{ matrix.target }}/release"
+          Compress-Archive -Path "$dir/chelp.exe" -DestinationPath "chelp-${{ matrix.target }}.zip"
+          $hash = (Get-FileHash "chelp-${{ matrix.target }}.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  chelp-${{ matrix.target }}.zip" | Out-File -Encoding ascii "chelp-${{ matrix.target }}.zip.sha256"
 
-      - name: Upload Release Artifacts
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chelp-${{ matrix.target }}
+          path: |
+            chelp-*.tar.gz*
+            chelp-*.zip*
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Create GitHub release with checksums
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            chelp-${{ matrix.target }}.${{ matrix.archive_ext }}
-            chelp-${{ matrix.target }}.${{ matrix.archive_ext }}.sha256
+            chelp-*.tar.gz
+            chelp-*.tar.gz.sha256
+            chelp-*.zip
+            chelp-*.zip.sha256
+          generate_release_notes: true

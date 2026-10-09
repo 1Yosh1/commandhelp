@@ -77,7 +77,10 @@ async fn test_stale_socket_is_reclaimed() {
     let store = SchemaStore::new(tmp_db.path()).unwrap();
 
     // Simulate the crash: a regular file sitting where the socket should be.
-    std::fs::write(std::path::Path::new("/tmp").join(&socket), b"stale").unwrap();
+    // `socket_dir()` honors `CHELP_SOCKET_PATH`; keep the stale file where the
+    // daemon will actually look for it.
+    let stale_path = chelp::ipc::socket_file(&socket);
+    std::fs::write(&stale_path, b"stale").unwrap();
     assert!(!is_running(&socket).await, "a plain file is not a live daemon");
 
     let server_handle = start_daemon(store.clone(), &socket)

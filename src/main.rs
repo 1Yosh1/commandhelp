@@ -64,6 +64,14 @@ enum Commands {
     },
     /// 🛡️ Audit privacy, zero telemetry, and local data retention
     Privacy,
+    /// 🖥️ Show daemon, socket, cache and configuration state
+    Status,
+    /// ⏱️ Benchmark warm ghost-text completion latency (n samples)
+    Bench {
+        /// Number of completion requests to time
+        #[arg(default_value = "50")]
+        samples: usize,
+    },
     /// 🔍 Parse and dump CLI command schema AST (for tool authors and debugging)
     DumpAst {
         binary: String,
@@ -211,6 +219,56 @@ async fn run() -> Result<(), ChelpError> {
             println!("• Command History: NEVER logged, stored, or sent over network.");
             println!("• Credentials: Supports CHELP_API_KEY environment variable (compatible with 1Password / Bitwarden CLI).");
             println!("• Purge: Run `chelp cache clear` anytime to purge all local data.");
+        }
+
+        Commands::Status => {
+            let running = chelp::ipc::is_running(&socket_name).await;
+            println!("🖥️  CommandHelp Status");
+            println!("--------------------------------------");
+            println!("Daemon:            {}", if running { "running" } else { "not running" });
+            println!("Kill switch:       {}", std::env::var("CHELP_DISABLE_DAEMON").map(|v| format!("CHELP_DISABLE_DAEMON={}", v)).unwrap_or_else(|_| "not set".to_string()));
+            println!("Socket name:       {}", socket_name);
+            #[cfg(unix)]
+            {
+                println!("Socket path:       {}", chelp::ipc::socket_file(&socket_name).display());
+                println!("Socket dir (env):  {}", std::env::var("CHELP_SOCKET_PATH").map(|v| format!("{} (custom)", v)).unwrap_or_else(|_| "system temp (default)".to_string()));
+                println!("Socket mode:       {}", chelp::ipc::socket_mode(&socket_name));
+            }
+            let cache_count = SchemaStore::new(&get_db_path())
+                .and_then(|store| store.count_schemas())
+                .unwrap_or(0);
+            println!("Cache path:        {}", get_db_path().display());
+            println!("Cached schemas:    {}", cache_count);
+            let cfg = load_config().ok();
+            println!("Provider:          {}", cfg.as_ref().map(|c| c.ai.provider.as_str()).unwrap_or("<unconfigured>"));
+            println!("Model:             {}", cfg.as_ref().and_then(|c| c.ai.model.clone()).unwrap_or_else(|| "<provider default>".to_string()));
+        }
+
+        Commands::Bench { samples } => {
+            // Warm-latency harness (sim ask): time `samples` complete requests
+            // and report p50/p95/max against the 15 ms budget.
+            use std::time::Instant;
+            let mut durations = Vec::with_capacity(samples);
+            let mut failures = 0usize;
+            for _ in 0..samples {
+                let start = Instant::now();
+                let request = IpcRequest::Complete { buffer: "docker ".to_string() };
+                let ok = matches!(
+                    send_ipc_request(&socket_name, &request, COMPLETE_BUDGET).await,
+                    Ok(IpcResponse::Suggestions { .. })
+                );
+                durations.push(start.elapsed());
+                if !ok {
+                    failures += 1;
+                }
+            }
+            durations.sort();
+            let p50 = durations[durations.len() / 2].as_millis();
+            let p95 = durations[(durations.len() * 95).clamp(0, durations.len() - 1) / 100].as_millis();
+            let max = durations.last().map(|d| d.as_millis()).unwrap_or(0);
+            println!("⏱️  {} warm samples against '{}'", samples, socket_name);
+            println!("    budget: 15 ms  ·  p50: {} ms  ·  p95: {} ms  ·  max: {} ms", p50, p95, max);
+            println!("    in-budget failures: {} (each degraded to no-suggestion)", failures);
         }
 
         Commands::DumpAst { binary, subcommand } => {

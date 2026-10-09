@@ -37,11 +37,47 @@ pub enum IpcResponse {
     Error { message: String },
 }
 
-/// On unix interprocess maps namespaced names to `$TMPDIR`-less `/tmp/<name>`;
+/// Directory that holds the actual socket file on unix. Overridable via
+/// `CHELP_SOCKET_PATH` so audited workstations can keep the socket under a
+/// user-owned directory (e.g. `$XDG_RUNTIME_DIR`) instead of shared `/tmp`.
+#[cfg(unix)]
+fn socket_dir() -> std::path::PathBuf {
+    if let Ok(dir) = std::env::var("CHELP_SOCKET_PATH") {
+        if !dir.trim().is_empty() {
+            return std::path::PathBuf::from(dir);
+        }
+    }
+    std::env::temp_dir()
+}
+
+/// On unix interprocess maps namespaced names to `<socket_dir>/<name>`;
 /// knowing the path is what lets us recover from a crashed daemon.
 #[cfg(unix)]
-fn socket_file(name: &str) -> std::path::PathBuf {
-    std::path::PathBuf::from("/tmp").join(name)
+pub fn socket_file(name: &str) -> std::path::PathBuf {
+    socket_dir().join(name)
+}
+
+/// Current socket file mode (unix), e.g. `"0600"` after hardening; on Windows
+/// named pipes have no path, so report n/a. Used by privacy/status output.
+#[cfg(unix)]
+pub fn socket_mode(name: &str) -> String {
+    use std::os::unix::fs::PermissionsExt;
+    match std::fs::metadata(socket_file(name)) {
+        Ok(md) => format!("0{:o}", md.permissions().mode() & 0o777),
+        Err(_) => "not-created".to_string(),
+    }
+}
+
+#[cfg(not(unix))]
+pub fn socket_file(name: &str) -> std::path::PathBuf {
+    let _ = name;
+    std::env::temp_dir().join(name)
+}
+
+#[cfg(not(unix))]
+pub fn socket_mode(name: &str) -> String {
+    let _ = name;
+    "n/a (named pipe)".to_string()
 }
 
 fn to_socket_name(name: &str) -> Result<interprocess::local_socket::Name<'_>, ChelpError> {
@@ -169,7 +205,28 @@ pub async fn start_daemon(store: SchemaStore, name: &str) -> Result<JoinHandle<(
             .name(to_socket_name(name)?)
             .create_tokio()
         {
-            Ok(listener) => break listener,
+            Ok(listener) => {
+                // Hardening (sim finding): restrict the socket file to its own
+                // user, and when `CHELP_SOCKET_PATH` points at a dedicated
+                // directory, keep that directory private too.
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    let _ = std::fs::set_permissions(
+                        socket_file(name),
+                        std::fs::Permissions::from_mode(0o600),
+                    );
+                    if let Ok(dir) = std::env::var("CHELP_SOCKET_PATH") {
+                        if !dir.trim().is_empty() && std::path::Path::new(&dir).is_dir() {
+                            let _ = std::fs::set_permissions(
+                                &dir,
+                                std::fs::Permissions::from_mode(0o700),
+                            );
+                        }
+                    }
+                }
+                break listener;
+            }
             Err(e) => {
                 if recovered {
                     return Err(ChelpError::Ipc(format!("cannot bind socket: {}", e)));
